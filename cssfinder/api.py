@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
+import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from itertools import repeat
@@ -114,6 +115,19 @@ class TaskOptions:
 
 
 def run_task(task: Task, options: TaskOptions) -> None:
+    """Run task until completed."""
+    try:
+        return _run_task(task, options)
+    except Exception as e:
+        logging.critical(
+            "Task %r failed due to exception:\n%s",
+            task.task_name,
+            str.join("", traceback.format_exception(type(e), e, e.__traceback__)),
+        )
+        raise
+
+
+def _run_task(task: Task, options: TaskOptions) -> None:
     """Run task until completed."""
     try:
         set_priority(os.getpid(), Priority.REALTIME, IoPriority.HIGH)
