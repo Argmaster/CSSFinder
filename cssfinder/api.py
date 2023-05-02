@@ -130,7 +130,7 @@ def run_task(task: Task, options: TaskOptions) -> None:
 def _run_task(task: Task, options: TaskOptions) -> None:
     """Run task until completed."""
     try:
-        set_priority(os.getpid(), Priority.REALTIME, IoPriority.HIGH)
+        set_priority(os.getpid(), Priority.ABOVE_NORMAL, IoPriority.HIGH)
     except (OSError, psutil.AccessDenied):
         logging.warning(
             "Failed to elevate process priority. It can negatively affect program "
