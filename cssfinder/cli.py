@@ -114,6 +114,8 @@ class _CommandWrapper:
 
     @property
     def name(self) -> str:
+        assert self.command is not None
+        assert self.command.name is not None
         return self.command.name
 
     def __repr__(self) -> str:
@@ -161,12 +163,6 @@ def _print_tree(
         )
 
 
-@main.group("project")
-def _project(ctx: click.Context) -> None:
-    """Group of commands for interaction with projects."""
-    ctx.obj.project_path = Path.cwd().as_posix()
-
-
 @main.command("create-new-project")
 @click.option("--author", default=None, help="Author metadata field value.")
 @click.option("--email", default=None, help="Email metadata field value.")
@@ -184,6 +180,27 @@ def _project_new(
     from cssfinder.interactive import create_new_project
 
     create_new_project(author, email, name, description, project_version)
+
+
+@main.group("project")
+@click.pass_context
+def _project(ctx: click.Context) -> None:
+    """Group of commands for interaction with projects."""
+    ctx.obj.project_path = Path.cwd().as_posix()
+
+
+@_project.command("inspect")
+@click.pass_obj
+def _inspect(ctx: Ctx) -> None:
+    """Load and display project."""
+    from cssfinder.cssfproject import CSSFProject
+
+    if ctx.project_path is None:
+        reason = "ctx.project_path shall not be None."
+        raise RuntimeError(reason)
+
+    project = CSSFProject.load_project(ctx.project_path)
+    rich.print_json(project.json(indent=4))
 
 
 @_project.command("add-gilbert-task")
@@ -371,7 +388,7 @@ def _run_tasks(
     raise SystemExit(0)
 
 
-@_project.command("create-single-report")
+@_project.command("create-task-report")
 @click.argument(
     "task",
 )
@@ -398,7 +415,7 @@ def _run_tasks(
     help="Automatically open report in web browser.",
 )
 @click.pass_obj
-def _create_single_report(
+def _create_task_report(
     ctx: Ctx, task: str, *, html: bool, pdf: bool, open_: bool
 ) -> None:
     """Create short report for task.
