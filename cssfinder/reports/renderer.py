@@ -100,8 +100,12 @@ class Ctx:
         """Return mathematical properties."""
         return OrderedDict(
             {
+                "Correction count": f"{self.props.correction_count}",
                 "Hilbert-Schmidt distance": f"{self.props.optimum:.3f}",
                 "Sample correlation coefficient": f"{self.props.r_value:.3f}",
+                "Offset (optimum)": f"{self.props.optimum:.3f}",
+                "Trend (aa1)": f"{self.props.aa1:.3f}",
+                "Exp Offset (bb1)": f"{self.props.bb1:.3f}",
             }
         )
 
