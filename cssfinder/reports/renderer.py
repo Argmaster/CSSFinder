@@ -44,6 +44,7 @@ class ReportType(Enum):
     PDF = "pdf"
     ARCHIVE = "zip"
     TXT = "txt"
+    JSON = "json"
 
     def get_file_name(self) -> str:
         """Return default file name for specific type of report."""

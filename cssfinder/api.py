@@ -300,20 +300,17 @@ def create_report(
     """Create report for task selected by pattern from project object."""
     tasks = project.select_tasks([task])
 
-    if len(tasks) > 1:
-        matched_tasks_names = [t.task_name for t in tasks]
-        message = (
-            f"Pattern {task!r} matches more than one task ({len(tasks)}): "
-            f"{matched_tasks_names!r}"
-        )
-        raise AmbiguousTaskKeyError(message)
+    for task_object in tasks:
+        logging.info("Creating summary for task %s", task_object.task_name)
 
-    task_object, *_ = tasks
+        manager = ReportManager(project, task_object)
+        prepared_manager = manager.prepare()
 
-    manager = ReportManager(project, task_object)
-    prepared_manager = manager.prepare()
-    for report_type in reports:
-        yield prepared_manager.request_report(report_type)
+        for report_type in reports:
+            logging.info(
+                "Report for task %s of type %s", task_object.task_name, report_type.name
+            )
+            yield prepared_manager.request_report(report_type)
 
 
 class AmbiguousTaskKeyError(KeyError):

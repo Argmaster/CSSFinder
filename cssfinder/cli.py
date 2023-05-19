@@ -36,7 +36,9 @@ import pendulum
 import rich
 
 import cssfinder
+from cssfinder.api import create_report_from
 from cssfinder.log import enable_performance_logging
+from cssfinder.reports.renderer import ReportType
 
 if TYPE_CHECKING:
     from cssfinder import examples
@@ -201,6 +203,33 @@ def _inspect(ctx: Ctx) -> None:
 
     project = CSSFProject.load_project(ctx.project_path)
     rich.print_json(project.json(indent=4))
+
+
+@_project.command("inspect-output")
+@click.argument("task_pattern")
+@click.pass_obj
+def _inspect_output(ctx: Ctx, task_pattern: str) -> None:
+    """Load and display project."""
+    import json
+
+    from cssfinder.cssfproject import CSSFProject
+
+    if ctx.project_path is None:
+        reason = "ctx.project_path shall not be None."
+        raise RuntimeError(reason)
+
+    project = CSSFProject.load_project(ctx.project_path)
+    tasks = project.select_tasks([task_pattern])
+    for i, task in enumerate(tasks):
+        corrections = json.loads(
+            task.output_corrections_file.read_text(encoding="utf-8")
+        )
+        print("First correction: ", corrections[0])
+        print("Middle correction:", corrections[len(corrections) // 2 - 1])
+        print("Last correction:  ", corrections[-1])
+
+        if i < (len(tasks) - 1):
+            print("-" * 70)
 
 
 @_project.command("add-gilbert-task")
@@ -407,6 +436,13 @@ def _run_tasks(
     help="Include PDF report.",
 )
 @click.option(
+    "--json",
+    "--no-json",
+    is_flag=True,
+    default=False,
+    help="Include JSON report.",
+)
+@click.option(
     "--open",
     "--no-open",
     "open_",
@@ -416,7 +452,7 @@ def _run_tasks(
 )
 @click.pass_obj
 def _create_task_report(
-    ctx: Ctx, task: str, *, html: bool, pdf: bool, open_: bool
+    ctx: Ctx, task: str, *, html: bool, pdf: bool, json: bool, open_: bool
 ) -> None:
     """Create short report for task.
 
@@ -435,6 +471,9 @@ def _create_task_report(
 
     if pdf:
         include_report_types.append(ReportType.PDF)
+
+    if json:
+        include_report_types.append(ReportType.JSON)
 
     if len(include_report_types) == 0:
         logging.critical(
@@ -455,8 +494,28 @@ def _create_task_report(
 
 
 def _log_exit(code: int) -> None:
-    logging.exception("Exit with code code.")
+    logging.exception("Exit with code %d.", code)
     raise SystemExit(code)
+
+
+@_project.command("create-json-summary")
+@click.argument("task_pattern")
+@click.pass_obj
+def _create_json_summary(ctx: Ctx, task_pattern: str) -> None:
+    """Load and display project."""
+    import json
+
+    assert ctx.project_path is not None
+    output = []
+
+    for report in create_report_from(
+        ctx.project_path, task=task_pattern, reports=[ReportType.JSON]
+    ):
+        content = json.loads(report.content)
+        output.append(content)
+
+    dest = Path(ctx.project_path) / "output" / "summary.json"
+    dest.write_text(json.dumps(output, indent=4))
 
 
 @main.command("list-backends")
