@@ -26,19 +26,13 @@ from __future__ import annotations
 import logging
 import shutil
 import traceback
-import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 
 import click
-import pendulum
-import rich
 
 import cssfinder
-from cssfinder.api import create_report_from
-from cssfinder.log import enable_performance_logging
-from cssfinder.reports.renderer import ReportType
 
 if TYPE_CHECKING:
     from cssfinder import examples
@@ -51,11 +45,13 @@ class Ctx:
     """Command line context wrapper class."""
 
     is_debug: bool = False
+    is_rich: bool = True
     project_path: str | None = None
 
 
 @click.group(invoke_without_command=True, no_args_is_help=True)
 @click.pass_context
+@click.version_option(cssfinder.__version__, "-V", "--version", prog_name="cssfinder")
 @click.option(
     "-v",
     "--verbose",
@@ -64,15 +60,62 @@ class Ctx:
     help="Control verbosity of logging, by default+ critical only, use "
     "-v, -vv, -vvv to gradually increase it.",
 )
-@click.version_option(cssfinder.__version__, "-V", "--version", prog_name="cssfinder")
+@click.option(
+    "--numpy-thread-count",
+    type=int,
+    default=1,
+    required=False,
+    help="NumPy thread count override. Use '-1' to disable override and use defaults.",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    required=False,
+    help="NumPy random generator seed override.",
+)
 @click.option("--debug", is_flag=True, default=False)
+@click.option("--rich", "--no-rich", "is_rich", is_flag=True, default=True)
 @click.option("--perf-log", is_flag=True, default=False)
-def main(ctx: click.Context, verbose: int, *, debug: bool, perf_log: bool) -> None:
+def main(
+    ctx: click.Context,
+    verbose: int,
+    seed: Optional[int],
+    numpy_thread_count: int,
+    *,
+    debug: bool,
+    is_rich: bool,
+    perf_log: bool,
+) -> None:
     """CSSFinder is a script for finding closest separable states."""
-    from cssfinder.log import configure_logger
+    import os
+    from pprint import pformat
 
-    configure_logger(verbosity=verbose, logger_name="cssfinder", use_rich=False)
-    ctx.obj = Ctx(is_debug=debug)
+    import pendulum
+    import rich
+    from threadpoolctl import threadpool_info
+
+    if numpy_thread_count != -1:
+        numpy_thread_count_str = str(numpy_thread_count)
+
+        os.environ["OMP_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["OPENBLAS_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["MKL_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["VECLIB_MAXIMUM_THREADS"] = numpy_thread_count_str
+        os.environ["NUMEXPR_NUM_THREADS"] = numpy_thread_count_str
+
+    import numpy as np
+
+    from cssfinder.log import configure_logger, enable_performance_logging
+
+    configure_logger(verbosity=verbose, logger_name="cssfinder", use_rich=is_rich)
+    ctx.obj = Ctx(is_debug=debug, is_rich=is_rich)
+
+    if seed is not None:
+        logging.debug("NumPy random number generator seed set to %d", seed)
+        np.random.seed(seed)  # noqa: NPY002
+
+    logging.debug("\n%s", pformat(threadpool_info(), indent=4))
 
     logging.getLogger("numba").setLevel(logging.ERROR)
     logging.info("CSSFinder started at %s", pendulum.now().isoformat(sep=" "))
@@ -81,8 +124,8 @@ def main(ctx: click.Context, verbose: int, *, debug: bool, perf_log: bool) -> No
         enable_performance_logging()
 
     if verbose >= VERBOSITY_INFO:
-        print(
-            """
+        rich.print(
+            f"""{'[blue]' if is_rich else ''}
   ██████╗███████╗███████╗███████╗██╗███╗   ██╗██████╗ ███████╗██████╗
  ██╔════╝██╔════╝██╔════╝██╔════╝██║████╗  ██║██╔══██╗██╔════╝██╔══██╗
  ██║     ███████╗███████╗█████╗  ██║██╔██╗ ██║██║  ██║█████╗  ██████╔╝
@@ -195,6 +238,8 @@ def _project(ctx: click.Context) -> None:
 @click.pass_obj
 def _inspect(ctx: Ctx) -> None:
     """Load and display project."""
+    import rich
+
     from cssfinder.cssfproject import CSSFProject
 
     if ctx.project_path is None:
@@ -390,6 +435,7 @@ def _run_tasks(
             ctx.project_path,
             match_,
             is_debug=ctx.is_debug,
+            is_rich=ctx.is_rich,
             force_sequential=force_sequential,
             max_parallel=max_parallel,
         )
@@ -486,6 +532,8 @@ def _create_task_report(
             report.save_default()
             if open_:
                 report.get_default_dest()
+                import webbrowser
+
                 webbrowser.open(url=report.get_default_dest().as_uri())
 
     except AmbiguousTaskKeyError as exc:
@@ -505,6 +553,9 @@ def _create_json_summary(ctx: Ctx, task_pattern: str) -> None:
     """Load and display project."""
     import json
 
+    from cssfinder.api import create_report_from
+    from cssfinder.reports.renderer import ReportType
+
     assert ctx.project_path is not None
     output = []
 
@@ -521,6 +572,8 @@ def _create_json_summary(ctx: Ctx, task_pattern: str) -> None:
 @main.command("list-backends")
 def _list_backends() -> None:
     """List available backends."""
+    import rich
+
     from cssfinder.algorithm.backend.loader import Loader
 
     rich.get_console().print(Loader.new().get_rich_table())
@@ -529,6 +582,8 @@ def _list_backends() -> None:
 @main.command("list-examples")
 def _list_examples() -> None:
     """Show list of all available example projects."""
+    import rich
+
     from cssfinder import examples
 
     console = rich.get_console()
@@ -600,6 +655,8 @@ def _examples_clone(
                     parameter will be considered a example name.
 
     """
+    import rich
+
     from cssfinder.crossplatform import open_file_explorer, open_terminal
     from cssfinder.cssfproject import ProjectFileNotFoundError
     from cssfinder.enums import ExitCode

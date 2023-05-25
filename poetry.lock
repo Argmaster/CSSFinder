@@ -3265,6 +3265,18 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
+name = "threadpoolctl"
+version = "3.1.0"
+description = "threadpoolctl"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "threadpoolctl-3.1.0-py3-none-any.whl", hash = "sha256:8b99adda265feb6773280df41eece7b2e6561b772d21ffd52e372f999024907b"},
+    {file = "threadpoolctl-3.1.0.tar.gz", hash = "sha256:a335baacfaa4400ae1f0d8e3a58d6674d2f8828e3716bb2802c44955ad391380"},
+]
+
+[[package]]
 name = "tinycss2"
 version = "1.2.1"
 description = "A tiny CSS parser"
@@ -3671,4 +3683,4 @@ backend-rust = ["cssfinder-backend-rust"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "6bf699aaca8d6819ab75f0d3f5d686a0effb2975b5690e4d52eb31706f3f35ed"
+content-hash = "fab7d39c31eb087d89fe3bdf6186acbb084e2e66579404d2b2decca526de571a"
