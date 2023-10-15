@@ -50,6 +50,20 @@ ruff = ">=0.0.254"
 ipykernel = "^6.21.3"
 cssfinder-backend-numpy = ">=0.5.0"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.2"
+mkdocs-material = "^9.1.21"
+mkdocstrings = { extras = ["python"], version = "^0.22.0" }
+mkdocs-literate-nav = "^0.6.0"
+mkdocs-macros-plugin = "^1.0.2"
+mkdocs-gen-files = "^0.5.0"
+pygments = "^2.15.1"
+pymdown-extensions = "^10.3"
+mike = "^1.1.2"
+
 [tool.poetry.extras]
 backend-numpy = ["cssfinder-backend-numpy"]
 backend-rust = ["cssfinder-backend-rust"]
