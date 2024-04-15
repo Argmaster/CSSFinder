@@ -102,7 +102,7 @@ def run_project(
 
     else:
         with ProcessPoolExecutor(
-            max_parallel if max_parallel > 0 else None
+            max_parallel if max_parallel > 0 else None,
         ) as executor:
             out = executor.map(
                 run_task,
@@ -216,7 +216,10 @@ def run_gilbert(
 
 
 def create_gilbert(
-    config: GilbertCfg, asset_io: GilbertIO, *, is_debug: bool
+    config: GilbertCfg,
+    asset_io: GilbertIO,
+    *,
+    is_debug: bool,
 ) -> Gilbert:
     """Create Gilbert object from configuration with help of specified IO.
 
@@ -282,7 +285,9 @@ def create_gilbert(
 
 
 def create_report_from(
-    project_file_path: Path | str, task: str, reports: list[ReportType]
+    project_file_path: Path | str,
+    task: str,
+    reports: list[ReportType],
 ) -> Iterable[Report]:
     """Load project (`cssfproject.json`) and create report for task selected by pattern.
 
@@ -318,7 +323,9 @@ def create_report_from(
 
 
 def create_report(
-    project: CSSFProject, task: str, reports: list[ReportType]
+    project: CSSFProject,
+    task: str,
+    reports: list[ReportType],
 ) -> Iterable[Report]:
     """Create report for task selected by pattern from project object."""
     tasks = project.select_tasks([task])
@@ -331,7 +338,9 @@ def create_report(
 
         for report_type in reports:
             logging.info(
-                "Report for task %s of type %s", task_object.task_name, report_type.name
+                "Report for task %s of type %s",
+                task_object.task_name,
+                report_type.name,
             )
             yield prepared_manager.request_report(report_type)
 

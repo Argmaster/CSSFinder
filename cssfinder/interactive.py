@@ -114,7 +114,11 @@ def _load_default_name_from_git() -> str:
     default_name = getpass.getuser()
 
     try:
-        retval = subprocess.run(["git", "config", "user.name"], capture_output=True)
+        retval = subprocess.run(
+            ["git", "config", "user.name"],  # noqa: S603, S607
+            capture_output=True,
+            check=False,
+        )
         if retval.returncode == 0:
             default_name = retval.stdout.decode("utf-8").strip()
 
@@ -128,7 +132,11 @@ def _load_default_email_from_git() -> EmailStr:
     default_email = EmailStr("unknown@unknown.com")
 
     try:
-        retval = subprocess.run(["git", "config", "user.email"], capture_output=True)
+        retval = subprocess.run(
+            ["git", "config", "user.email"],  # noqa: S603, S607
+            capture_output=True,
+            check=False,
+        )
         if retval.returncode == 0:
             default_email = EmailStr(retval.stdout.decode("utf-8").strip())
 
@@ -176,7 +184,7 @@ def get_project_fields_with_pytermgui(
             message = f"[210 bold]{e}"
 
 
-def _get_project_fields_with_pytermgui(  # noqa: PLR0913
+def _get_project_fields_with_pytermgui(
     default_author_name: str,
     default_author_email: str,
     default_project_name: str,
@@ -282,6 +290,9 @@ class GilbertTaskSpec:
 def add_task_gilbert(
     project: CSSFProject,
     spec: GilbertTaskSpec,
+    *,
+    no_interactive: bool,
+    override_existing: bool,
 ) -> None:
     """Add task to project and save it in place."""
     while True:
@@ -290,10 +301,16 @@ def add_task_gilbert(
             break
 
         except (ValueError, TypeError, ValidationError, KeyError):
+            if no_interactive:
+                raise
             spec = get_gilbert_task_fields_with_pytermgui(spec)
 
-    if spec.name in project.tasks and (
-        input("Task already exists, override? (y/n) ").casefold() != "Y".casefold()
+    if (
+        override_existing is False
+        and spec.name in project.tasks
+        and (
+            input("Task already exists, override? (y/n) ").casefold() != "Y".casefold()
+        )
     ):
         print("Aborted.")
         raise SystemExit(1)
@@ -321,7 +338,8 @@ class InputField(ptg.InputField):
 
 
 def get_gilbert_task_fields_with_pytermgui(
-    spec: GilbertTaskSpec, message: Optional[str] = None
+    spec: GilbertTaskSpec,
+    message: Optional[str] = None,
 ) -> GilbertTaskSpec:
     """Create temporary TUI prompt for entering task configuration."""
     is_interrupted: bool = True

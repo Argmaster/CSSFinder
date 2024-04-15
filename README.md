@@ -1,4 +1,27 @@
-# CSSFinder - Closest Separable State Finder
+<p align="center">
+   <img width="400" src="https://github.com/Argmaster/CSSFinder/assets/56170852/e84ee4e7-711e-405e-ab41-49ca24c7a350" alt="" />
+</p>
+
+<h1 align="center"> CSSFinder </h1>
+
+<p align="center">
+  <a href="https://github.com/Argmaster/CSSFinder/releases/"><img src="https://img.shields.io/github/v/release/Argmaster/cssfinder?style=flat" alt="GitHub release"></a>
+  <a href="https://github.com/Argmaster/CSSFinder/releases"><img src="https://img.shields.io/github/release-date/Argmaster/cssfinder" alt="GitHub Release Date - Published_At"></a>
+  <a href="https://pypi.org/project/cssfinder"><img src="https://img.shields.io/pypi/v/cssfinder?style=flat" alt="PyPI release"></a>
+  <a href="https://pypi.org/project/cssfinder/"><img src="https://img.shields.io/pypi/dm/cssfinder.svg?label=PyPI%20downloads" alt="PyPI Downloads"></a>
+  <a href="https://pypi.org/project/cssfinder"><img src="https://img.shields.io/pypi/pyversions/cssfinder?style=flat" alt="Supported Python versions"></a>
+  <a href="https://pypi.org/project/cssfinder"><img src="https://img.shields.io/pypi/implementation/cssfinder?style=flat" alt="Supported Python implementations"></a>
+  <a href="https://github.com/argmaster/cssfinder/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Argmaster/cssfinder" alt="license_mit"></a>
+  <a href="https://github.com/Argmaster/CSSFinder/pulls"><img src="https://img.shields.io/github/issues-pr/Argmaster/cssfinder?style=flat" alt="Pull requests"></a>
+  <a href="https://github.com/Argmaster/CSSFinder/issues"><img src="https://img.shields.io/github/issues-raw/Argmaster/cssfinder?style=flat" alt="Open issues"></a>
+  <a href="https://github.com/Argmaster/CSSFinder"><img src="https://img.shields.io/github/repo-size/Argmaster/cssfinder" alt="GitHub repo size"></a>
+  <a href="https://github.com/Argmaster/CSSFinder"><img src="https://img.shields.io/github/languages/code-size/Argmaster/cssfinder" alt="GitHub code size in bytes"></a>
+  <a href="https://github.com/Argmaster/CSSFinder"><img src="https://img.shields.io/github/stars/Argmaster/cssfinder" alt="GitHub Repo stars"></a>
+  <a href="https://python-poetry.org/"><img src="https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json" alt="Poetry"></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style"></a>
+</p>
+
+## CSSFinder - Closest Separable State Finder
 
 CSSFinder is a software designed to find the closest separable state (CSS) for
 a given quantum state. This helps in quantifying entanglement and classifying
@@ -24,7 +47,7 @@ algorithm were created:
 Development of those two implementations allowed us to better understand limits
 of what can and what can not become faster.
 
-## Installing
+## Installation
 
 To install CSSFinder from PyPI, use `pip` in terminal:
 
@@ -47,13 +70,18 @@ pip install cssfinder[rust]
 You don't need both, one will be perfectly fine. Alternatively, you may find
 `cssfinder-backend-numpy` and `cssfinder-backend-rust` on PyPI and install them
 manually, with exact same effect. Backends are dynamically detected from all
-locations, Python can import modules, thus any valid way of making backend code
-reachable for interpreter will work.
+locations from where Python can import modules, thus any valid way of making
+backend code reachable for interpreter will work.
 
-If you want to use development version, traverse `Development` and `Packaging`
-sections below.
+### Development version
 
-### But there is a catch!
+To install development version of CSSFinder, you can use `pip` in terminal:
+
+```
+pip install git+https://github.com/Argmaster/pygerber
+```
+
+### For windows users
 
 CSSFinder can export PDF reports (and other formats too), but it uses
 `weasyprint` for that and `weasyprint` relies on `GTK3`. Unfortunately it is
@@ -67,132 +95,38 @@ its seamless to do that.
 
 Its worth mentioning that other formats are not affected by this issue.
 
-## Examples
+## Quick start guide
 
-Fortunately for all newcomers, CSSFinders comes in with some example projects,
-which may come in handy while starting to describe your first project.
+For quick start guide please visit
+[Quick Start Guide](https://argmaster.github.io/cssfinder/latest/usage/01_quick_start.md)
+in CSSFinder online documentation.
 
-List of examples available with CSSFinder can be obtained with command:
+## Command line interface
 
-```
-cssfinder examples list
-```
-
-Afterwards you should be presented with table, within console window, similar
-to this one:
-
-![image](https://user-images.githubusercontent.com/56170852/233212801-6cd1fb3e-ae91-4878-81d7-d972431850ed.png)
-
-For sake of example, let's assume that name `5qubits_json` caught our eye, and
-now we are willing to spend some of our precious time diving deeper into what's
-inside. To do that, we have to clone this example somewhere with following
-command:
+To display command line interface map use following command:
 
 ```
-cssfinder examples clone --name 5qubits_json
+cssfinder show-command-tree
 ```
 
-> This command, similarly to all other commands of all other CSSFinder
-> commands, can be used with `--help` flag to inspect possible invocation
-> parameters.
+Output should look similar to this:
 
-As result, you should find `5qubits_json` directory have been created in your
-current working directory.
-
-> Example `5qubits_json` relies on `numpy` backend, make sure to install it, if
-> you haven't done it before.
-
-![image](https://user-images.githubusercontent.com/56170852/233217324-9b51d732-18a6-4297-91d7-b277c73edfd6.png)
-
-Now we can proceed with running tasks defined within the project. That can be
-achieved with following command:
-
-```
-cssfinder project -p ./5qubits_json/ task run
-```
-
-This command will run all tasks, which may take something in between of few
-seconds and few minutes, depending on your hardware.
-
-Result of calculations can be inspected in `output/` directory in project
-folder (`5qubits_json/`).
-
-![image](https://user-images.githubusercontent.com/56170852/233218942-ac47a923-21f7-4b3a-af02-7a7961360abc.png)
-
-## Workflow
-
-In CSSFinder, computations are described in special `cssfproject.*` files
-within dedicated directories. Such directory with all files within it is called
-a `project`. Project must contain either `cssfproject.json` or `cssfproject.py`
-files which describe what should be done. `Json` file is purely declarative,
-but with `$ref` support, while python scripts (`cssfproject.py`) allow for
-dynamic creation of tasks. Tasks are smallest possible unit of work which can
-be scheduled for execution by CSSFinder. They can be automatically executed in
-parallel with automatic queues to speed up calculations.
-
-### Project with static (json) project
-
-During this tutorial it is preferable to create an empty directory and do
-everything from now on within this directory. Let's call this directory
-`tutorial1` and we will create it in home directory (`~`).
-
-```
-~/tutorial1/
-```
-
-Start by creating new directory, `project1`, in there. This directory will
-contain all project files needed for calculations.
-
-Fastest way to start with CSSFinder is to use static `json` files, therefore
-this is what we are going to use now.
-
-Create `cssfproject.json` file in `~/tutorial1/project1` directory.
-
-We will use our example `state.mtx` file, but you can use Your own real data.
-
-Create `state.mtx` file within `~/tutorial1/project1` directory and fill it
-with following data:
-
-```
-%%MatrixMarket matrix array real symmetric
-%Created with the Wolfram Language : www.wolfram.com
-8 8
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-  -2.5000000000000000E-01
-   0.0000000000000000E+00
-  -2.5000000000000000E-01
-  -2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
+```log
+main                           - CSSFinder is a script for finding closest separable states.
+├── clone-example              - Clone one of examples to specific location.
+├── create-new-project         - Create new project.
+├── list-backends              - List available backends.
+├── list-examples              - Show list of all available example projects.
+├── project                    - Group of commands for interaction with projects.
+│   ├── add-gilbert-task       - Add new gilbert algorithm task.
+│   ├── create-json-summary    - Load and display project.
+│   ├── create-task-report     - Create short report for task.
+│   ├── inspect                - Load project from PROJECT_PATH and display its contents.
+│   ├── inspect-output         - Load project from PROJECT_PATH and display output of task specified by
+│   ├── inspect-tasks          - Load project from PROJECT_PATH and inspect configuration of tasks specified by
+│   ├── list-tasks             - Load project from PROJECT_PATH and list names of all tasks defined.
+│   └── run-tasks              - Run tasks from the project.
+└── show-command-tree          - Show the command tree of your CLI.
 ```
 
 ## Development
@@ -373,63 +307,3 @@ Then You can view output using [snakeviz](https://pypi.org/project/snakeviz/):
 ```
 snakeviz "#examples_profile_5qubits_prof.prof"
 ```
-
-## Command Line Interface
-
-The `CSSFinder` is a script that finds the closest separable states. The script
-offers a command-line interface that allows you to execute different tasks
-related to your CSSFinder project. This documentation will provide a summary of
-the commands and options available.
-
-Once you have installed CSSFinder, you can use it from the command line:
-
-`cssfinder [OPTIONS] COMMAND [ARGS]... `
-
-You can run `cssfinder` without any arguments to display a help message.
-
-## Options
-
-The following options are available:
-
-- `-v`, `--verbose`: increases the verbosity of logging messages. You can use
-  `-v` up to `-vvv` to increase the verbosity level.
-- `--debug`: enables debug mode.
-- `-V`, `--version`: shows the version number of CSSFinder and exits.
-
-## Commands
-
-The following commands are available:
-
-### project
-
-This command allows you to interact with a CSSFinder project. You need to
-provide the path to your project as an argument.
-
-#### run
-
-This command runs all tasks in a CSSFinder project.
-
-`cssfinder project run [OPTIONS] `
-
-##### Options
-
-- `-t`, `--tasks`: run specific tasks from the project. You can specify
-  multiple tasks by using this option multiple times.
-
-#### task-report
-
-This command generates a short report for a single task in a CSSFinder project.
-
-`cssfinder project task-report TASK [OPTIONS] `
-
-##### Arguments
-
-- `TASK`: the name of the task to generate the report for.
-
-##### Options
-
-- `--html`, `--no-html`: include or exclude an HTML report in the generated
-  report.
-- `--pdf`, `--no-pdf`: include or exclude a PDF report in the generated report.
-
-- `--open`, `--no-open`: automatically open report in web browser.

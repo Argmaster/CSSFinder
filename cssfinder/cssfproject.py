@@ -180,6 +180,16 @@ class CSSFProject(CommonBaseModel):
         msg = f"Unknown project format {project_path.suffix} of project {project_path}"
         raise FileNotFoundError(msg)
 
+    @staticmethod
+    def is_project_path(file_or_directory: Path) -> bool:
+        """Check if path points to CSSFinder project file or project directory."""
+        try:
+            project_file_path(file_or_directory)
+        except FileNotFoundError:
+            return False
+        else:
+            return True
+
     @classmethod
     def _load_json_project(cls, project_path: Path) -> Self:
         logging.debug("Resolved project path to %r", project_path.as_posix())
@@ -190,21 +200,21 @@ class CSSFProject(CommonBaseModel):
             raise ProjectFileNotFoundError(error_message) from exc
 
         try:
-            content = jsonref.loads(content)
+            decoded_content = jsonref.loads(content)
         except json.decoder.JSONDecodeError as exc:
             raise MalformedProjectFileError(exc.msg, exc.doc, exc.pos) from exc
 
-        if not isinstance(content, dict):
+        if not isinstance(decoded_content, dict):
             logging.critical("Content of cssfproject.json file is not a dictionary.")
-            raise InvalidCSSFProjectContentError(content)
+            raise InvalidCSSFProjectContentError(decoded_content)
 
-        project = cls(**content, project_path=project_path)
-        return project
+        return cls(**decoded_content, project_path=project_path)
 
     @classmethod
     def _load_py_cssfproject(cls, project_path: Path) -> Self:
         spec = importlib.util.spec_from_file_location(
-            project_path.name[:-3], project_path.as_posix()
+            project_path.name[:-3],
+            project_path.as_posix(),
         )
         if spec is None or spec.loader is None:
             msg = f"Failed to load project file {project_path}"
@@ -228,7 +238,6 @@ class CSSFProject(CommonBaseModel):
                 f"CSSFProject object.\nFrom {project_path}."
             )
 
-        assert isinstance(project_object, cls)
         return project_object
 
     def select_tasks(self, patterns: list[str] | None = None) -> list[Task]:
@@ -306,7 +315,8 @@ class _ProjectFieldMixin:
         """Path to directory containing `cssfproject.json` file."""
         if self._project is None:
             raise NotBoundToProjectError(
-                self, "Access to 'project_directory' property."
+                self,
+                "Access to 'project_directory' property.",
             )
         return self.project.project_directory
 
@@ -315,7 +325,8 @@ class _ProjectFieldMixin:
         """Path to output directory for this project."""
         if self._project is None:
             raise NotBoundToProjectError(
-                self, "Access to 'project_output_directory' property."
+                self,
+                "Access to 'project_output_directory' property.",
             )
         return self.project.project_output_directory
 
@@ -332,7 +343,7 @@ class NotBoundToProjectError(Exception):
     def __init__(self, ob: Any, context_msg: str) -> None:
         super().__init__(
             f"Attempted to use unbound object {ob} in context requiring it to be "
-            f"bound. ({context_msg})"
+            f"bound. ({context_msg})",
         )
 
 
@@ -385,7 +396,8 @@ class _TaskMixin(_ProjectFieldMixin):
         """Path to output directory of task."""
         if self._task_name is None:
             raise NotBoundToTaskError(
-                self, "Access to 'task_output_directory' property."
+                self,
+                "Access to 'task_output_directory' property.",
             )
         return self.project.project_output_directory / self.task_name
 
@@ -518,14 +530,18 @@ class GilbertCfg(CommonBaseModel, _TaskFieldMixin):
     ) -> None:
         """Evaluate dynamic path expressions."""
         super().bind(project, task_name, task)
-        assert isinstance(self.state, State)
+        if not isinstance(self.state, State):
+            msg = "State field must be of State type."
+            raise TypeError(msg)
 
         self.state.bind(project, task_name, task)
         self.get_resources().bind(project, task_name, task)
 
     def get_state(self) -> State:
         """Return initial state information."""
-        assert isinstance(self.state, State)
+        if not isinstance(self.state, State):
+            msg = "State field must be of State type."
+            raise TypeError(msg)
         return self.state
 
 
@@ -726,7 +742,7 @@ class Resources(CommonBaseModel, _TaskFieldMixin):
                             project=project,
                             task_name=task_name,
                             task=task,
-                        )
+                        ),
                     )
                     .expanduser()
                     .resolve()
@@ -743,7 +759,7 @@ class Resources(CommonBaseModel, _TaskFieldMixin):
                         project=project,
                         task_name=task_name,
                         task=task,
-                    )
+                    ),
                 )
                 .expanduser()
                 .resolve()
