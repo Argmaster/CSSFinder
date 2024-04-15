@@ -38,6 +38,7 @@ from pydantic import ConstrainedStr, EmailStr, Field, validator
 
 from cssfinder.base_model import CommonBaseModel
 from cssfinder.enums import CaseInsensitiveEnum
+from cssfinder.jinja2_tools import get_cssfinder_jinja2_environment
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -251,6 +252,16 @@ class CSSFProject(CommonBaseModel):
             keys.update(fnmatch.filter(self.tasks.keys(), pattern))
 
         return [self.tasks[k] for k in keys]
+
+    def to_python_project_template(self) -> str:
+        """Convert contents of this project into Python project file."""
+        return (
+            get_cssfinder_jinja2_environment()
+            .get_template(
+                "python_base_project.pyjinja2",
+            )
+            .render(project=self)
+        )
 
 
 class InvalidCSSFProjectContentError(ValueError):
@@ -634,13 +645,6 @@ class State(CommonBaseModel, _TaskFieldMixin):
         if task_name is None or task is None:
             return
 
-        self.file = (
-            Path(self.file.format(project=project, task_name=task_name, task=task))
-            .expanduser()
-            .resolve()
-            .as_posix()
-        )
-
     def is_predefined_dimensions(self) -> bool:
         """Return True when both dimensions are available."""
         return self.depth is not None and self.quantity is not None
@@ -660,6 +664,24 @@ class State(CommonBaseModel, _TaskFieldMixin):
             msg = "quantity is not specified."
             raise NoDimensionsError(msg)
         return self.quantity
+
+    @property
+    def expanded_file(self) -> str:
+        """Return expanded path to file."""
+        if self._project is None:
+            raise NotBoundToProjectError(self, "Access to 'expanded_file' property.")
+        return (
+            Path(
+                self.file.format(
+                    project=self.project,
+                    task_name=self.task_name,
+                    task=self.task,
+                ),
+            )
+            .expanduser()
+            .resolve()
+            .as_posix()
+        )
 
 
 class NoDimensionsError(ValueError):

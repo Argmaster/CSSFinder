@@ -52,7 +52,10 @@ def create_new_project(
     default_name: Optional[str] = None,
     default_description: Optional[str] = None,
     default_version_string: Optional[str] = None,
-) -> None:
+    *,
+    no_interactive: bool,
+    override_existing: bool,
+) -> CSSFProject:
     """Create new project directory and cssfinder.json file."""
     all_set = (
         default_author is not None
@@ -68,7 +71,7 @@ def create_new_project(
     description = default_description or " "
     version_string = default_version_string or "1.0.0"
 
-    if all_set:
+    if all_set or no_interactive:
         meta = Meta(
             author=author,
             email=EmailStr(email),
@@ -86,7 +89,7 @@ def create_new_project(
         )
 
     project_file_path = Path.cwd() / meta.name / "cssfproject.json"
-    if project_file_path.exists():
+    if (not override_existing) and project_file_path.exists():
         if (
             input("Project already exists, override? (y/n) ").casefold()
             == "Y".casefold()
@@ -99,13 +102,11 @@ def create_new_project(
     project_file_path.parent.mkdir(0o777, parents=True, exist_ok=True)
     project_file_path.touch(0o777, exist_ok=True)
 
-    project = CSSFProject(
+    return CSSFProject(
         meta=meta,
         tasks=[],
         project_path=project_file_path.as_posix(),
     )
-    serialized = project.json(indent=4, ensure_ascii=False)
-    project_file_path.write_text(serialized)
 
 
 def _load_default_name_from_git() -> str:

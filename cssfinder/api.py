@@ -240,7 +240,7 @@ def create_gilbert(
     """
     state_config = config.get_state()
 
-    initial_state = asset_io.load_state(state_config.file)
+    initial_state = asset_io.load_state(state_config.expanded_file)
 
     if state_config.is_predefined_dimensions():
         depth = state_config.get_depth()

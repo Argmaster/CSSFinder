@@ -28,11 +28,12 @@ import shutil
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 import click
 
 import cssfinder
+from cssfinder.cssfproject import project_file_path
 
 if TYPE_CHECKING:
     from cssfinder import examples
@@ -214,32 +215,101 @@ def _print_tree(
         )
 
 
-@main.command("create-new-project")
+@main.command("create-new-json-project")
 @click.option("--author", default=None, help="Author metadata field value.")
 @click.option("--email", default=None, help="Email metadata field value.")
 @click.option("--name", default=None, help="Name metadata field value.")
 @click.option("--description", default=None, help="Description metadata field value.")
 @click.option("--project-version", default=None, help="Version metadata field value.")
-def _project_new(
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Make prompt not interactive at all.",
+)
+@click.option(
+    "--override-existing",
+    is_flag=True,
+    default=False,
+    help="Override existing project if exists.",
+)
+def _create_new_json_project(
     author: Optional[str],
     email: Optional[str],
     name: Optional[str],
     description: Optional[str],
     project_version: Optional[str],
+    *,
+    no_interactive: bool,
+    override_existing: bool,
 ) -> None:
-    """Create new project."""
+    """Create new JSON based project directory `<name>` in current working directory."""
     from cssfinder.interactive import create_new_project
 
-    create_new_project(author, email, name, description, project_version)
+    project = create_new_project(
+        author,
+        email,
+        name,
+        description,
+        project_version,
+        no_interactive=no_interactive,
+        override_existing=override_existing,
+    )
+
+    serialized = project.json(indent=4, ensure_ascii=False)
+    project.project_file.write_text(serialized)
+
+
+@main.command("create-new-python-project")
+@click.option("--author", default=None, help="Author metadata field value.")
+@click.option("--email", default=None, help="Email metadata field value.")
+@click.option("--name", default=None, help="Name metadata field value.")
+@click.option("--description", default=None, help="Description metadata field value.")
+@click.option("--project-version", default=None, help="Version metadata field value.")
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Make prompt not interactive at all.",
+)
+@click.option(
+    "--override-existing",
+    is_flag=True,
+    default=False,
+    help="Override existing project if exists.",
+)
+def _create_new_python_project(
+    author: Optional[str],
+    email: Optional[str],
+    name: Optional[str],
+    description: Optional[str],
+    project_version: Optional[str],
+    *,
+    no_interactive: bool,
+    override_existing: bool,
+) -> None:
+    """Create new Python based project directory `<name>` in current working
+    directory.
+    """
+    from cssfinder.interactive import create_new_project
+
+    project = create_new_project(
+        author,
+        email,
+        name,
+        description,
+        project_version,
+        no_interactive=no_interactive,
+        override_existing=override_existing,
+    )
+
+    serialized = project.to_python_project_template()
+    project.project_file.with_suffix(".py").write_text(serialized)
 
 
 @main.group("project")
 def _project() -> None:
     """Group of commands for interaction with projects."""
-
-
-def _add_project_path_argument(function: Callable) -> Callable:
-    return click.argument("project_path", type=_project_path_validator)(function)
 
 
 def _project_path_validator(param: str) -> Path:
@@ -252,11 +322,33 @@ def _project_path_validator(param: str) -> Path:
         msg = "Provided path is not a valid project path."
         raise click.BadParameter(msg)
 
-    return project_path
+    return project_file_path(project_path)
+
+
+def _json_project_path_validator(param: str) -> Path:
+    """Check if provided path is a valid project path."""
+    path = _project_path_validator(param)
+    if path.suffix != ".json":
+        msg = "Provided path is not a valid JSON project path."
+        raise click.BadParameter(msg)
+    return path
+
+
+CallableT = TypeVar("CallableT", bound=Callable)
+
+
+def _add_project_path_argument(
+    param_name: str = "project_path",
+    validator: Callable[[str], Path] = _project_path_validator,
+) -> Callable[[CallableT], CallableT]:
+    def _(function: CallableT) -> CallableT:
+        return click.argument(param_name, type=validator)(function)
+
+    return _
 
 
 @_project.command("inspect")
-@_add_project_path_argument
+@_add_project_path_argument()
 def _inspect(project_path: Path) -> None:
     """Load project from PROJECT_PATH and display its contents.
 
@@ -273,7 +365,7 @@ def _inspect(project_path: Path) -> None:
 
 
 @_project.command("list-tasks")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.option("--long", "-l", is_flag=True, default=False, help="Show more details.")
 def _list_tasks(project_path: Path, *, long: bool) -> None:
     """Load project from PROJECT_PATH and list names of all tasks defined."""
@@ -296,7 +388,7 @@ def _list_tasks(project_path: Path, *, long: bool) -> None:
 
 
 @_project.command("inspect-tasks")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.argument("task_pattern")
 @click.pass_obj
 def _inspect_tasks(ctx: Ctx, project_path: Path, task_pattern: str) -> None:
@@ -325,7 +417,7 @@ def _inspect_tasks(ctx: Ctx, project_path: Path, task_pattern: str) -> None:
 
 
 @_project.command("inspect-output")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.argument("task_pattern")
 def _inspect_output(project_path: Path, task_pattern: str) -> None:
     """Load project from PROJECT_PATH and display output of task specified by
@@ -350,7 +442,7 @@ def _inspect_output(project_path: Path, task_pattern: str) -> None:
 
 
 @_project.command("add-gilbert-task")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.option("--name", default=None, help="Name for the task.")
 @click.option("--mode", default=None, help="Algorithm mode.")
 @click.option(
@@ -477,7 +569,7 @@ def _add_gilbert_task(  # noqa: PLR0913
 
 
 @_project.command("run-tasks")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.option(
     "--match",
     "-m",
@@ -555,7 +647,7 @@ def _run_tasks(
 
 
 @_project.command("create-task-report")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.argument(
     "task",
 )
@@ -644,7 +736,7 @@ def _log_exit(code: int) -> None:
 
 
 @_project.command("create-json-summary")
-@_add_project_path_argument
+@_add_project_path_argument()
 @click.argument("task_pattern")
 def _create_json_summary(project_path: Path, task_pattern: str) -> None:
     """Load and display project."""
@@ -665,6 +757,32 @@ def _create_json_summary(project_path: Path, task_pattern: str) -> None:
 
     dest = Path(project_path) / "output" / "summary.json"
     dest.write_text(json.dumps(output, indent=4))
+
+
+@_project.command("to-python")
+@_add_project_path_argument("json_project_path", _json_project_path_validator)
+@click.option("--override-existing", is_flag=True, default=False)
+def _to_python(json_project_path: Path, *, override_existing: bool) -> None:
+    """Load project from JSON_PROJECT_PATH and convert it to Python based project."""
+    from cssfinder.cssfproject import CSSFProject
+
+    project = CSSFProject.load_project(json_project_path)
+    project_file_path = project.project_file.with_suffix(".py")
+
+    if (
+        not override_existing
+        and project_file_path.exists()
+        and (
+            input("`cssfinder.py` already exists, override? (y/n) ").casefold()
+            != "Y".casefold()
+        )
+    ):
+        print("Aborted.")
+        raise SystemExit(1)
+
+    project_file_path.write_text(
+        project.to_python_project_template(),
+    )
 
 
 @main.command("list-backends")
