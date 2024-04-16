@@ -43,7 +43,8 @@ class GilbertIO:
     """Loader of Gilbert algorithm assets."""
 
     def __init__(
-        self, matrix_format: MatrixFormat = MatrixFormat.MATRIX_MARKET
+        self,
+        matrix_format: MatrixFormat = MatrixFormat.MATRIX_MARKET,
     ) -> None:
         self.loader = MatrixIO.new(matrix_format)
 
@@ -63,7 +64,9 @@ class GilbertIO:
         """
         mtx = self.loader.load(source).astype(np.complex128)
         logging.info(
-            "Loaded matrix from %r of shape %r", Path(source).as_posix(), mtx.shape
+            "Loaded matrix from %r of shape %r",
+            Path(source).as_posix(),
+            mtx.shape,
         )
 
         # We are expecting loaded ndarray to be a square matrix, all other numbers of

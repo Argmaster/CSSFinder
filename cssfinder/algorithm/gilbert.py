@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class Gilbert:
     """Class interface of gilbert algorithm."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         initial: npt.NDArray[np.complex128],
@@ -72,7 +72,8 @@ class Gilbert:
         )
 
     def set_symmetries(
-        self, symmetries: list[list[npt.NDArray[np.complex128]]]
+        self,
+        symmetries: list[list[npt.NDArray[np.complex128]]],
     ) -> None:
         """Set symmetries to use during calculations.
 

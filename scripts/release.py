@@ -50,23 +50,27 @@ def create(version: str) -> None:
     VERSION - valid SemVer version string, eg. 1.3.2, without 'v' prefix.
 
     """
-    retval = subprocess.run(["git", "branch", "--show-current"], capture_output=True)
+    retval = subprocess.run(
+        ["git", "branch", "--show-current"],
+        capture_output=True,
+        check=False,
+    )
     print(retval.stdout.decode("utf-8"))
     is_dev = retval.stdout.decode("utf-8").startswith("dev")
 
-    retval = subprocess.run(["git", "status"], capture_output=True)
+    retval = subprocess.run(["git", "status"], capture_output=True, check=False)
     print(retval.stdout.decode("utf-8"))
     is_dirty = "Changes not staged for commit" in retval.stdout.decode("utf-8")
 
     if is_dirty:
-        subprocess.run(["git", "add", "-A"])
-        subprocess.run(["git", "stash"])
+        subprocess.run(["git", "add", "-A"], check=False)
+        subprocess.run(["git", "stash"], check=False)
 
     if not is_dev:
-        subprocess.run(["git", "switch", "dev"])
+        subprocess.run(["git", "switch", "dev"], check=False)
 
-    subprocess.run(["git", "pull"])
-    subprocess.run(["git", "switch", "-c", f"release/{version}"])
+    subprocess.run(["git", "pull"], check=False)
+    subprocess.run(["git", "switch", "-c", f"release/{version}"], check=False)
     replace_version(
         PYPROJECT_PATH,
         r"version\s*=\s*\"(.*?)\"\n",
@@ -83,14 +87,17 @@ def create(version: str) -> None:
         f"cssfinder-{version}",
         count=0,
     )
-    subprocess.run(["git", "add", "-A"])
-    subprocess.run(["poetry", "run", "poe", "run-hooks"])
-    subprocess.run(["git", "add", "-A"])
-    subprocess.run(["git", "commit", "-m", f"Bump version to {version}"])
-    subprocess.run(["git", "push", "--set-upstream", "origin", f"release/{version}"])
+    subprocess.run(["git", "add", "-A"], check=False)
+    subprocess.run(["poetry", "run", "poe", "run-hooks"], check=False)
+    subprocess.run(["git", "add", "-A"], check=False)
+    subprocess.run(["git", "commit", "-m", f"Bump version to {version}"], check=False)
+    subprocess.run(
+        ["git", "push", "--set-upstream", "origin", f"release/{version}"],
+        check=False,
+    )
 
     if is_dirty:
-        subprocess.run(["git", "stash", "pop"])
+        subprocess.run(["git", "stash", "pop"], check=False)
 
 
 def replace_version(src: Path, regex: str, replacement: str, count: int = 1) -> None:

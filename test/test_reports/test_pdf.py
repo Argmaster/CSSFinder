@@ -25,7 +25,6 @@ from __future__ import annotations
 from test.test_reports.base import ReportTestBase
 
 import pytest
-
 from cssfinder.reports.pdf import WEasyPrintNotAvailableError
 from cssfinder.reports.renderer import ReportType
 

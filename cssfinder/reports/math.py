@@ -247,7 +247,6 @@ def find_correction_optimum(values: npt.NDArray[np.float64]) -> np.float64:
         The optimum correction value for the input array of values.
 
     """
-    values = values
     upper_half = values[len(values) // 2 :]
 
     optimum = upper_half[-1] - 1e-6
@@ -262,8 +261,7 @@ def find_correction_optimum(values: npt.NDArray[np.float64]) -> np.float64:
 @lru_cache(16)
 def _r_indexes(length: int) -> npt.NDArray[np.float64]:
     indexes = np.arange(length)
-    difference = np.mean(np.square(indexes)) - np.square(np.mean(indexes))
-    return difference  # type: ignore[no-any-return]
+    return np.mean(np.square(indexes)) - np.square(np.mean(indexes))  # type: ignore[no-any-return]
 
 
 @lru_cache(16)

@@ -46,7 +46,8 @@ class Loader:
     """Backend loader class."""
 
     BACKEND_NAME_REGEX: ClassVar[re.Pattern] = re.compile(
-        r"cssfinder(_|-)backend(_|-)[a-z0-9_\-]+", re.IGNORECASE
+        r"cssfinder(_|-)backend(_|-)[a-z0-9_\-]+",
+        re.IGNORECASE,
     )
 
     def __init__(self) -> None:
@@ -169,7 +170,7 @@ class Loader:
                     f"{cls.__module__}.{cls.__qualname__}",
                     getattr(cls, "description", ""),
                 )
-            except (TypeError, ValueError):
+            except (TypeError, ValueError):  # noqa: PERF203
                 logging.warning("Failed to display information about backed %r", value)
 
         return table

@@ -93,7 +93,7 @@ class Ctx:
                 "Email": self.task.project.meta.email,
                 "Description": self.task.project.meta.description,
                 "Version": self.task.project.meta.version,
-            }
+            },
         )
 
     @property
@@ -107,7 +107,7 @@ class Ctx:
                 "Offset (optimum)": f"{self.props.optimum:.3f}",
                 "Trend (aa1)": f"{self.props.aa1:.3f}",
                 "Exp Offset (bb1)": f"{self.props.bb1:.3f}",
-            }
+            },
         )
 
 
@@ -150,5 +150,5 @@ class DefaultDestinationNotSpecifiedError(Exception):
     def __init__(self, report_type: ReportType) -> None:
         super().__init__(
             f"Default destination for report object of type {report_type.name!r} "
-            "was not specified."
+            "was not specified.",
         )

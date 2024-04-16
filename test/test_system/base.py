@@ -29,7 +29,6 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 
 import numpy as np
-
 from cssfinder.api import run_project_from
 from cssfinder.io.gilbert_io import GilbertIO
 
@@ -78,17 +77,20 @@ class SetupRunProjectMixin:
 
         cls._temporary_directory = TemporaryDirectory()
         shutil.copytree(
-            cls.PROJECT_PATH.as_posix(), cls.get_project_directory().as_posix()
+            cls.PROJECT_PATH.as_posix(),
+            cls.get_project_directory().as_posix(),
         )
 
         run_project_from(
-            cls.get_project_directory(), [cls.TEST_TASK_NAME], force_sequential=True
+            cls.get_project_directory(),
+            [cls.TEST_TASK_NAME],
+            force_sequential=True,
         )
 
         gilbert_io = GilbertIO()
 
         cls.corrections = gilbert_io.load_corrections(
-            cls.get_output_directory() / "corrections.json"
+            cls.get_output_directory() / "corrections.json",
         )
         cls.state = gilbert_io.load_state(cls.get_output_directory() / "state.mtx")
 
@@ -108,10 +110,10 @@ class ModeTest(SetupRunProjectMixin):
     class MinMax:
         """Well named container for max and min values of floating range."""
 
-        min: float  # noqa: A003  # not needed in this scope
+        min: float  # not needed in this scope
         """Minimal value of range."""
 
-        max: float  # noqa: A003  # not needed in this scope
+        max: float  # not needed in this scope
         """Maximal value of range."""
 
     EXPECTED_MINIMAL_NUMBER_OF_CORRECTIONS: int

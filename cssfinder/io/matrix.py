@@ -70,7 +70,8 @@ class MatrixIO(ABC):
         return io
 
     def load(
-        self, src: str | Path | IO[bytes]
+        self,
+        src: str | Path | IO[bytes],
     ) -> npt.NDArray[np.int64 | np.float64 | np.complex128]:
         """Load matrix from file as numpy array."""
         if isinstance(src, (str, Path)):
@@ -81,7 +82,8 @@ class MatrixIO(ABC):
 
     @abstractmethod
     def _load(
-        self, src: IO[bytes]
+        self,
+        src: IO[bytes],
     ) -> npt.NDArray[np.int64 | np.float64 | np.complex128]:
         ...
 
@@ -101,7 +103,9 @@ class MatrixIO(ABC):
 
     @abstractmethod
     def _dump(
-        self, data: npt.NDArray[np.int64 | np.float64 | np.complex128], dest: IO[bytes]
+        self,
+        data: npt.NDArray[np.int64 | np.float64 | np.complex128],
+        dest: IO[bytes],
     ) -> None:
         ...
 
@@ -112,14 +116,18 @@ class MatrixMarketIO(MatrixIO):
     matrix_format: ClassVar[MatrixFormat] = MatrixFormat.MATRIX_MARKET
 
     def _load(
-        self, dest: IO[bytes]
+        self,
+        dest: IO[bytes],
     ) -> npt.NDArray[np.int64 | np.float64 | np.complex128]:
         mtx = scipy.io.mmread(dest)
-        assert mtx is not None
+        if mtx is None:
+            raise TypeError
         return np.array(mtx)
 
     def _dump(
-        self, data: npt.NDArray[np.int64 | np.float64 | np.complex128], dest: IO[bytes]
+        self,
+        data: npt.NDArray[np.int64 | np.float64 | np.complex128],
+        dest: IO[bytes],
     ) -> None:
         scipy.io.mmwrite(
             dest,

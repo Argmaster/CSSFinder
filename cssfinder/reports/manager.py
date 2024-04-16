@@ -79,7 +79,11 @@ class ReportManager:
         plots["iterations"] = plotter.plot_iteration()
 
         return PreparedReportManager(
-            self.project, plotter.slope_props, plots, self.task, corrections
+            self.project,
+            plotter.slope_props,
+            plots,
+            self.task,
+            corrections,
         )
 
 
@@ -97,7 +101,9 @@ class PreparedReportManager:
 
     @classmethod
     def register_renderer(
-        cls, renderer_cls: Type[Renderer], report_type: ReportType
+        cls,
+        renderer_cls: Type[Renderer],
+        report_type: ReportType,
     ) -> None:
         """Register renderer for report type."""
         cls.RENDERERS[report_type] = renderer_cls

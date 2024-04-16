@@ -116,7 +116,7 @@ def _load_default_name_from_git() -> str:
 
     try:
         retval = subprocess.run(
-            ["git", "config", "user.name"],  # noqa: S603, S607
+            ["git", "config", "user.name"],
             capture_output=True,
             check=False,
         )
@@ -134,7 +134,7 @@ def _load_default_email_from_git() -> EmailStr:
 
     try:
         retval = subprocess.run(
-            ["git", "config", "user.email"],  # noqa: S603, S607
+            ["git", "config", "user.email"],
             capture_output=True,
             check=False,
         )

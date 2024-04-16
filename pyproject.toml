@@ -279,7 +279,9 @@ ignore = [
     "D105",   # Adding docstrings in all magic methods doesn't make sense, as usually they are just boilerplate to support operators.
     "FIX002",
     "D107",   # Adding docstring to __init__ doesn't make sense when class already has its docstring.
-    "T201", # print() function is extensively used to interact with user.
+    "T201",  # print() function is extensively used to interact with user.
+    "S603",  # `subprocess` call: check for execution of untrusted input.
+    "S607",  # Starting a process with a partial executable path.
 ]
 
 [tool.ruff.lint.pylint]

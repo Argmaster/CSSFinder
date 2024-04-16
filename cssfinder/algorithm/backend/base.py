@@ -43,7 +43,7 @@ class BackendBase:
     author: ClassVar[str] = ""
     description: ClassVar[str] = ""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         initial: npt.NDArray[np.complex128],
         depth: int,
@@ -61,7 +61,8 @@ class BackendBase:
         self.is_debug = is_debug
 
     def set_symmetries(
-        self, symmetries: list[list[npt.NDArray[np.complex128]]]
+        self,
+        symmetries: list[list[npt.NDArray[np.complex128]]],
     ) -> None:
         """Set symmetries to use during calculations.
 

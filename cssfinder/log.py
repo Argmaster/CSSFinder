@@ -116,7 +116,7 @@ class MarkupStripFormatter(logging.Formatter):
 
     """
 
-    def format(self, record: LogRecord) -> str:  # noqa: A003
+    def format(self, record: LogRecord) -> str:
         """Return the formatted string of a log record after stripping all formatting
         tags.
 

@@ -25,7 +25,6 @@ from __future__ import annotations
 from test.test_system.base import ModeTest
 
 import pytest
-
 from cssfinder.examples import Example
 
 
@@ -44,7 +43,7 @@ class Test_SBiPa(ModeTest):  # noqa: N801  # Underscore used for readability.
 
 
 class Test_SBiPa_WithProjection(  # noqa: N801  # Underscore used for readability.
-    ModeTest
+    ModeTest,
 ):
     """Test behavior of SBiPa mode of Gilbert algorithm with projections."""
 

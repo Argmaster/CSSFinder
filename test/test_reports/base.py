@@ -44,7 +44,9 @@ class ReportTestBase(SetupRunProjectMixin):
     def generate_report(self, report_type: ReportType) -> None:
         """Generate report."""
         for report in create_report_from(
-            self.get_project_directory(), self.TEST_TASK_NAME, [report_type]
+            self.get_project_directory(),
+            self.TEST_TASK_NAME,
+            [report_type],
         ):
             report.save_default()
 

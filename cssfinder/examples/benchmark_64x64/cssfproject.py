@@ -32,8 +32,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import EmailStr
-
 from cssfinder.api import run_project
 from cssfinder.cssfproject import (
     AlgoMode,
@@ -48,6 +46,7 @@ from cssfinder.cssfproject import (
     State,
     Task,
 )
+from pydantic import EmailStr
 
 PROJECT_DIR = Path(__file__).parent
 PROJECT_SYMMETRIES = PROJECT_DIR / "symmetries"
@@ -85,7 +84,7 @@ for backend in ["numpy_cython", "numpy", "numpy_jit", "rust_naive"]:
                                 p.as_posix()
                                 for p in PROJECT_SYMMETRIES.glob("sym_sym_2_*.mtx")
                             ],
-                        ]
+                        ],
                     ),
                 ),
             )

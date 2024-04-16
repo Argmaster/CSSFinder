@@ -43,12 +43,13 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 def pytest_collection_modifyitems(
-    config: pytest.Config, items: Iterable[pytest.Item]
+    config: pytest.Config,
+    items: Iterable[pytest.Item],
 ) -> None:
     """Modify list of tests."""
     if config.getoption("--pdf-expect-fail"):
         skip_mark = pytest.mark.skip(
-            reason="Running only @pytest.mark.pdf_expect_fail (--pdf-expect-fail used)."
+            reason="Running only @pytest.mark.pdf_expect_fail (--pdf-expect-fail used).",
         )
         for item in items:
             if "pdf_expect_fail" not in item.keywords:
