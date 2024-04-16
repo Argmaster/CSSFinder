@@ -25,7 +25,7 @@ jobs:
           architecture: "x64"
 
       - name: Install Poetry 📜
-        run: pip install poetry==1.4.0
+        run: pip install poetry==1.8.2
 
       - name: Install dependencies 🗄️
         run: poetry install --no-cache --sync
@@ -43,13 +43,6 @@ jobs:
         id: project-version
         run: |
           echo "version=$(poetry version | awk '{ print $2 }')" >> $GITHUB_OUTPUT
-
-      - name: Create development 🔨 Tag 🏷️
-        id: tag-version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          custom_tag: ${{ steps.project-version.outputs.version }}
-          github_token: ${{ secrets.REPO_ACCESS_TOKEN }}
 
       - name: Publish distribution 📦 to Test PyPI
         # Executed always

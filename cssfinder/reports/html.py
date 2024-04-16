@@ -24,8 +24,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import jinja2
-
+from cssfinder.jinja2_tools import get_cssfinder_jinja2_environment
 from cssfinder.reports.renderer import Renderer, Report, ReportType
 
 if TYPE_CHECKING:
@@ -39,10 +38,7 @@ class HTMLRenderer(Renderer):
 
     def __init__(self, props: SlopeProperties, plots: list[Plot], task: Task) -> None:
         super().__init__(props, plots, task)
-        self.env = jinja2.Environment(
-            loader=jinja2.PackageLoader("cssfinder"),
-            autoescape=jinja2.select_autoescape(),
-        )
+        self.env = get_cssfinder_jinja2_environment()
 
     def render(self) -> Report:
         """Generate report content."""

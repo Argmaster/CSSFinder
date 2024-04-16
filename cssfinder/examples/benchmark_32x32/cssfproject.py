@@ -32,8 +32,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import EmailStr
-
 from cssfinder.api import run_project
 from cssfinder.cssfproject import (
     AlgoMode,
@@ -47,6 +45,7 @@ from cssfinder.cssfproject import (
     State,
     Task,
 )
+from pydantic import EmailStr
 
 TASKS = {}
 
@@ -61,7 +60,7 @@ for backend in ["numpy_cython", "numpy", "numpy_jit", "rust_naive"]:
                         precision=precision,
                     ),
                     state=State(
-                        file=(Path(__file__).parent / "5qubits_in.mtx").as_posix()
+                        file=(Path(__file__).parent / "5qubits_in.mtx").as_posix(),
                     ),
                     runtime=RuntimeCfg(
                         visibility=0.4,

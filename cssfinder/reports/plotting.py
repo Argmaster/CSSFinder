@@ -86,7 +86,9 @@ class Plotter:
             axes = plt.subplot()
 
         axes.plot(
-            self.corrections[["index"]], self.corrections[["value"]], label="correction"
+            self.corrections[["index"]],
+            self.corrections[["value"]],
+            label="correction",
         )
         axes.hlines(
             [self.slope_props.optimum],

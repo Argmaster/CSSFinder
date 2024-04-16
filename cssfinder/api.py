@@ -31,6 +31,8 @@ from itertools import repeat
 from typing import TYPE_CHECKING, Iterable
 
 import psutil
+import rich
+from rich.panel import Panel
 
 from cssfinder.algorithm.gilbert import Gilbert
 from cssfinder.algorithm.mode_util import ModeUtil
@@ -50,6 +52,7 @@ def run_project_from(
     tasks: list[str] | None = None,
     *,
     is_debug: bool = False,
+    is_rich: bool = True,
     force_sequential: bool = False,
     max_parallel: int = -1,
 ) -> None:
@@ -65,6 +68,7 @@ def run_project_from(
         project,
         tasks,
         is_debug=is_debug,
+        is_rich=is_rich,
         force_sequential=force_sequential,
         max_parallel=max_parallel,
     )
@@ -75,6 +79,7 @@ def run_project(
     tasks: list[str] | None = None,
     *,
     is_debug: bool = False,
+    is_rich: bool = True,
     force_sequential: bool = False,
     max_parallel: int = -1,
 ) -> list[Task]:
@@ -87,22 +92,26 @@ def run_project(
     task_list = project.select_tasks(tasks)
 
     if force_sequential:
-        for _ in map(
+        for out in map(
             run_task,
             task_list,
             repeat(TaskOptions(is_debug=is_debug)),
         ):
-            pass
+            if isinstance(out, BaseException):
+                raise out
 
     else:
         with ProcessPoolExecutor(
-            max_parallel if max_parallel > 0 else None
+            max_parallel if max_parallel > 0 else None,
         ) as executor:
-            executor.map(
+            out = executor.map(
                 run_task,
                 task_list,
-                repeat(TaskOptions(is_debug=is_debug)),
+                repeat(TaskOptions(is_debug=is_debug, is_rich=is_rich)),
             )
+        for o in out:
+            if isinstance(o, BaseException):
+                raise o
 
     return task_list
 
@@ -112,6 +121,7 @@ class TaskOptions:
     """Container for extra task options."""
 
     is_debug: bool
+    is_rich: bool = True
 
 
 def run_task(task: Task, options: TaskOptions) -> None:
@@ -142,7 +152,12 @@ def _run_task(task: Task, options: TaskOptions) -> None:
         )
 
     if task.gilbert:
-        run_gilbert(task.gilbert, task.task_output_directory, is_debug=options.is_debug)
+        run_gilbert(
+            task.gilbert,
+            task.task_output_directory,
+            is_debug=options.is_debug,
+            is_rich=options.is_rich,
+        )
 
 
 def run_gilbert(
@@ -150,6 +165,7 @@ def run_gilbert(
     task_output_directory: Path,
     *,
     is_debug: bool = False,
+    is_rich: bool = True,
 ) -> None:
     """Run Gilbert algorithm part of task."""
     asset_io = GilbertIO()
@@ -159,7 +175,14 @@ def run_gilbert(
 
     algorithm = create_gilbert(config, asset_io, is_debug=is_debug)
 
-    logging.warning("Task %r started.", config.task_name)
+    logging.info("Task %r started.", config.task_name)
+
+    if is_rich:
+        rich.print(Panel.fit(f"[blue]Task {config.task_name} started."))
+    else:
+        print("-----------------------")
+        print(f"| Task {config.task_name} started |")
+        print("-----------------------")
 
     for epoch_index in algorithm.run(
         max_epochs=config.runtime.max_epochs,
@@ -191,9 +214,19 @@ def run_gilbert(
 
     logging.warning("Task %r finished.", config.task_name)
 
+    if is_rich:
+        rich.print(Panel.fit(f"[blue]Task {config.task_name} finished."))
+    else:
+        print("-----------------------")
+        print(f"| Task {config.task_name} finished |")
+        print("-----------------------")
+
 
 def create_gilbert(
-    config: GilbertCfg, asset_io: GilbertIO, *, is_debug: bool
+    config: GilbertCfg,
+    asset_io: GilbertIO,
+    *,
+    is_debug: bool,
 ) -> Gilbert:
     """Create Gilbert object from configuration with help of specified IO.
 
@@ -214,7 +247,7 @@ def create_gilbert(
     """
     state_config = config.get_state()
 
-    initial_state = asset_io.load_state(state_config.file)
+    initial_state = asset_io.load_state(state_config.expanded_file)
 
     if state_config.is_predefined_dimensions():
         depth = state_config.get_depth()
@@ -259,7 +292,9 @@ def create_gilbert(
 
 
 def create_report_from(
-    project_file_path: Path | str, task: str, reports: list[ReportType]
+    project_file_path: Path | str,
+    task: str,
+    reports: list[ReportType],
 ) -> Iterable[Report]:
     """Load project (`cssfproject.json`) and create report for task selected by pattern.
 
@@ -295,7 +330,9 @@ def create_report_from(
 
 
 def create_report(
-    project: CSSFProject, task: str, reports: list[ReportType]
+    project: CSSFProject,
+    task: str,
+    reports: list[ReportType],
 ) -> Iterable[Report]:
     """Create report for task selected by pattern from project object."""
     tasks = project.select_tasks([task])
@@ -308,7 +345,9 @@ def create_report(
 
         for report_type in reports:
             logging.info(
-                "Report for task %s of type %s", task_object.task_name, report_type.name
+                "Report for task %s of type %s",
+                task_object.task_name,
+                report_type.name,
             )
             yield prepared_manager.request_report(report_type)
 

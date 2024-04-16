@@ -32,8 +32,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import EmailStr
-
 from cssfinder.api import run_project
 from cssfinder.cssfproject import (
     AlgoMode,
@@ -47,6 +45,7 @@ from cssfinder.cssfproject import (
     State,
     Task,
 )
+from pydantic import EmailStr
 
 TASKS = [
     Task(

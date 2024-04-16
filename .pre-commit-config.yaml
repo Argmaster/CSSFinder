@@ -1,29 +1,5 @@
 exclude: '^(\.tox|\.env|dist|\.vscode)(/|$)'
 repos:
-  - repo: https://github.com/Argmaster/autocopyright
-    rev: "v1.1.0"
-    hooks:
-      - id: autocopyright
-        args:
-          [
-            -s,
-            "#",
-            -d,
-            cssfinder,
-            -d,
-            test,
-            -d,
-            scripts,
-            -d,
-            examples,
-            -g,
-            "*.py",
-            -g,
-            "*.pyi",
-            -l,
-            "./scripts/templates/MIT.md.jinja2",
-          ]
-
   - repo: https://github.com/PyCQA/autoflake
     rev: "v2.0.1"
     hooks:
@@ -58,17 +34,6 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/timothycrosley/isort
-    rev: "5.12.0"
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/timothycrosley/isort
-    rev: "5.12.0"
-    hooks:
-      - id: isort
-        args: [-a, "from __future__ import annotations", cssfinder]
-
   - repo: https://github.com/ambv/black
     rev: "23.3.0"
     hooks:
@@ -94,7 +59,7 @@ repos:
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: "v0.0.254"
+    rev: "v0.3.7"
     hooks:
       - id: ruff
         args: ["--fix"]

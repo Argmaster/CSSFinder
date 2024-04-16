@@ -26,19 +26,14 @@ from __future__ import annotations
 import logging
 import shutil
 import traceback
-import webbrowser
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 import click
-import pendulum
-import rich
 
 import cssfinder
-from cssfinder.api import create_report_from
-from cssfinder.log import enable_performance_logging
-from cssfinder.reports.renderer import ReportType
+from cssfinder.cssfproject import project_file_path
 
 if TYPE_CHECKING:
     from cssfinder import examples
@@ -51,11 +46,13 @@ class Ctx:
     """Command line context wrapper class."""
 
     is_debug: bool = False
-    project_path: str | None = None
+    is_rich: bool = True
+    project_path: Path | None = None
 
 
 @click.group(invoke_without_command=True, no_args_is_help=True)
 @click.pass_context
+@click.version_option(cssfinder.__version__, "-V", "--version", prog_name="cssfinder")
 @click.option(
     "-v",
     "--verbose",
@@ -64,15 +61,62 @@ class Ctx:
     help="Control verbosity of logging, by default+ critical only, use "
     "-v, -vv, -vvv to gradually increase it.",
 )
-@click.version_option(cssfinder.__version__, "-V", "--version", prog_name="cssfinder")
+@click.option(
+    "--numpy-thread-count",
+    type=int,
+    default=1,
+    required=False,
+    help="NumPy thread count override. Use '-1' to disable override and use defaults.",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    required=False,
+    help="NumPy random generator seed override.",
+)
 @click.option("--debug", is_flag=True, default=False)
+@click.option("--rich", "--no-rich", "is_rich", is_flag=True, default=True)
 @click.option("--perf-log", is_flag=True, default=False)
-def main(ctx: click.Context, verbose: int, *, debug: bool, perf_log: bool) -> None:
+def main(
+    ctx: click.Context,
+    verbose: int,
+    seed: Optional[int],
+    numpy_thread_count: int,
+    *,
+    debug: bool,
+    is_rich: bool,
+    perf_log: bool,
+) -> None:
     """CSSFinder is a script for finding closest separable states."""
-    from cssfinder.log import configure_logger
+    import os
+    from pprint import pformat
 
-    configure_logger(verbosity=verbose, logger_name="cssfinder", use_rich=False)
-    ctx.obj = Ctx(is_debug=debug)
+    import pendulum
+    import rich
+    from threadpoolctl import threadpool_info
+
+    if numpy_thread_count != -1:
+        numpy_thread_count_str = str(numpy_thread_count)
+
+        os.environ["OMP_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["OPENBLAS_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["MKL_NUM_THREADS"] = numpy_thread_count_str
+        os.environ["VECLIB_MAXIMUM_THREADS"] = numpy_thread_count_str
+        os.environ["NUMEXPR_NUM_THREADS"] = numpy_thread_count_str
+
+    import numpy as np
+
+    from cssfinder.log import configure_logger, enable_performance_logging
+
+    configure_logger(verbosity=verbose, logger_name="cssfinder", use_rich=is_rich)
+    ctx.obj = Ctx(is_debug=debug, is_rich=is_rich)
+
+    if seed is not None:
+        logging.debug("NumPy random number generator seed set to %d", seed)
+        np.random.seed(seed)  # noqa: NPY002
+
+    logging.debug("\n%s", pformat(threadpool_info(), indent=4))
 
     logging.getLogger("numba").setLevel(logging.ERROR)
     logging.info("CSSFinder started at %s", pendulum.now().isoformat(sep=" "))
@@ -81,8 +125,8 @@ def main(ctx: click.Context, verbose: int, *, debug: bool, perf_log: bool) -> No
         enable_performance_logging()
 
     if verbose >= VERBOSITY_INFO:
-        print(
-            """
+        rich.print(
+            f"""{'[blue]' if is_rich else ''}
   ██████╗███████╗███████╗███████╗██╗███╗   ██╗██████╗ ███████╗██████╗
  ██╔════╝██╔════╝██╔════╝██╔════╝██║████╗  ██║██╔══██╗██╔════╝██╔══██╗
  ██║     ███████╗███████╗█████╗  ██║██╔██╗ ██║██║  ██║█████╗  ██████╔╝
@@ -116,8 +160,14 @@ class _CommandWrapper:
 
     @property
     def name(self) -> str:
-        assert self.command is not None
-        assert self.command.name is not None
+        if self.command is None:
+            msg = "Command is not set."
+            raise TypeError(msg)
+
+        if self.command.name is None:
+            msg = "Command name is not set."
+            raise TypeError(msg)
+
         return self.command.name
 
     def __repr__(self) -> str:
@@ -128,7 +178,7 @@ def _build_command_tree(click_command: click.Command) -> _CommandWrapper:
     wrapper = _CommandWrapper(click_command)
 
     if isinstance(click_command, click.core.Group):
-        for _, cmd in click_command.commands.items():
+        for cmd in click_command.commands.values():
             if not getattr(cmd, "hidden", False):
                 wrapper.children.append(_build_command_tree(cmd))
 
@@ -165,64 +215,223 @@ def _print_tree(
         )
 
 
-@main.command("create-new-project")
+@main.command("create-new-json-project")
 @click.option("--author", default=None, help="Author metadata field value.")
 @click.option("--email", default=None, help="Email metadata field value.")
 @click.option("--name", default=None, help="Name metadata field value.")
 @click.option("--description", default=None, help="Description metadata field value.")
 @click.option("--project-version", default=None, help="Version metadata field value.")
-def _project_new(
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Make prompt not interactive at all.",
+)
+@click.option(
+    "--override-existing",
+    is_flag=True,
+    default=False,
+    help="Override existing project if exists.",
+)
+def _create_new_json_project(
     author: Optional[str],
     email: Optional[str],
     name: Optional[str],
     description: Optional[str],
     project_version: Optional[str],
+    *,
+    no_interactive: bool,
+    override_existing: bool,
 ) -> None:
-    """Create new project."""
+    """Create new JSON based project directory `<name>` in current working directory."""
     from cssfinder.interactive import create_new_project
 
-    create_new_project(author, email, name, description, project_version)
+    project = create_new_project(
+        author,
+        email,
+        name,
+        description,
+        project_version,
+        no_interactive=no_interactive,
+        override_existing=override_existing,
+    )
+
+    serialized = project.json(indent=4, ensure_ascii=False)
+    project.project_file.write_text(serialized)
+
+
+@main.command("create-new-python-project")
+@click.option("--author", default=None, help="Author metadata field value.")
+@click.option("--email", default=None, help="Email metadata field value.")
+@click.option("--name", default=None, help="Name metadata field value.")
+@click.option("--description", default=None, help="Description metadata field value.")
+@click.option("--project-version", default=None, help="Version metadata field value.")
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Make prompt not interactive at all.",
+)
+@click.option(
+    "--override-existing",
+    is_flag=True,
+    default=False,
+    help="Override existing project if exists.",
+)
+def _create_new_python_project(
+    author: Optional[str],
+    email: Optional[str],
+    name: Optional[str],
+    description: Optional[str],
+    project_version: Optional[str],
+    *,
+    no_interactive: bool,
+    override_existing: bool,
+) -> None:
+    """Create new Python based project directory `<name>` in current working
+    directory.
+    """
+    from cssfinder.interactive import create_new_project
+
+    project = create_new_project(
+        author,
+        email,
+        name,
+        description,
+        project_version,
+        no_interactive=no_interactive,
+        override_existing=override_existing,
+    )
+
+    serialized = project.to_python_project_template()
+    project.project_file.with_suffix(".py").write_text(serialized)
 
 
 @main.group("project")
-@click.pass_context
-def _project(ctx: click.Context) -> None:
+def _project() -> None:
     """Group of commands for interaction with projects."""
-    ctx.obj.project_path = Path.cwd().as_posix()
+
+
+def _project_path_validator(param: str) -> Path:
+    """Check if provided path is a valid project path."""
+    from cssfinder.cssfproject import CSSFProject
+
+    project_path = Path(param).expanduser().resolve()
+
+    if not CSSFProject.is_project_path(project_path):
+        msg = "Provided path is not a valid project path."
+        raise click.BadParameter(msg)
+
+    return project_file_path(project_path)
+
+
+def _json_project_path_validator(param: str) -> Path:
+    """Check if provided path is a valid project path."""
+    path = _project_path_validator(param)
+    if path.suffix != ".json":
+        msg = "Provided path is not a valid JSON project path."
+        raise click.BadParameter(msg)
+    return path
+
+
+CallableT = TypeVar("CallableT", bound=Callable)
+
+
+def _add_project_path_argument(
+    param_name: str = "project_path",
+    validator: Callable[[str], Path] = _project_path_validator,
+) -> Callable[[CallableT], CallableT]:
+    def _(function: CallableT) -> CallableT:
+        return click.argument(param_name, type=validator)(function)
+
+    return _
 
 
 @_project.command("inspect")
-@click.pass_obj
-def _inspect(ctx: Ctx) -> None:
-    """Load and display project."""
+@_add_project_path_argument()
+def _inspect(project_path: Path) -> None:
+    """Load project from PROJECT_PATH and display its contents.
+
+    This command allows for inspection of task list and project metadata from command
+    line.
+
+    """
+    import rich
+
     from cssfinder.cssfproject import CSSFProject
 
-    if ctx.project_path is None:
-        reason = "ctx.project_path shall not be None."
-        raise RuntimeError(reason)
-
-    project = CSSFProject.load_project(ctx.project_path)
+    project = CSSFProject.load_project(project_path)
     rich.print_json(project.json(indent=4))
 
 
-@_project.command("inspect-output")
+@_project.command("list-tasks")
+@_add_project_path_argument()
+@click.option("--long", "-l", is_flag=True, default=False, help="Show more details.")
+def _list_tasks(project_path: Path, *, long: bool) -> None:
+    """Load project from PROJECT_PATH and list names of all tasks defined."""
+    from cssfinder.cssfproject import CSSFProject
+
+    project = CSSFProject.load_project(project_path)
+    for name, details in project.tasks.items():
+        if long and details.gilbert is not None:
+            print(
+                name,
+                f"mode={details.gilbert.mode.value}",
+                (
+                    f"backend={details.gilbert.backend.name}"
+                    if details.gilbert.backend is not None
+                    else "backend=<undefined>"
+                ),
+            )
+            continue
+        print(name)
+
+
+@_project.command("inspect-tasks")
+@_add_project_path_argument()
 @click.argument("task_pattern")
 @click.pass_obj
-def _inspect_output(ctx: Ctx, task_pattern: str) -> None:
-    """Load and display project."""
+def _inspect_tasks(ctx: Ctx, project_path: Path, task_pattern: str) -> None:
+    """Load project from PROJECT_PATH and inspect configuration of tasks specified by
+    TASK_PATTERN.
+    """
+    import json
+
+    import rich
+
+    from cssfinder.cssfproject import CSSFProject
+
+    project = CSSFProject.load_project(project_path)
+    tasks = project.select_tasks([task_pattern])
+
+    for task in tasks:
+        if task.gilbert is not None:
+            content = json.dumps(
+                {task.task_name: {"gilbert": json.loads(task.gilbert.json())}},
+                indent=4,
+            )
+            if ctx.is_rich:
+                rich.print_json(content)
+            else:
+                print(content)
+
+
+@_project.command("inspect-output")
+@_add_project_path_argument()
+@click.argument("task_pattern")
+def _inspect_output(project_path: Path, task_pattern: str) -> None:
+    """Load project from PROJECT_PATH and display output of task specified by
+    TASK_PATTERN.
+    """
     import json
 
     from cssfinder.cssfproject import CSSFProject
 
-    if ctx.project_path is None:
-        reason = "ctx.project_path shall not be None."
-        raise RuntimeError(reason)
-
-    project = CSSFProject.load_project(ctx.project_path)
+    project = CSSFProject.load_project(project_path)
     tasks = project.select_tasks([task_pattern])
     for i, task in enumerate(tasks):
         corrections = json.loads(
-            task.output_corrections_file.read_text(encoding="utf-8")
+            task.output_corrections_file.read_text(encoding="utf-8"),
         )
         print("First correction: ", corrections[0])
         print("Middle correction:", corrections[len(corrections) // 2 - 1])
@@ -233,7 +442,7 @@ def _inspect_output(ctx: Ctx, task_pattern: str) -> None:
 
 
 @_project.command("add-gilbert-task")
-@click.pass_obj
+@_add_project_path_argument()
 @click.option("--name", default=None, help="Name for the task.")
 @click.option("--mode", default=None, help="Algorithm mode.")
 @click.option(
@@ -263,10 +472,14 @@ def _inspect_output(ctx: Ctx, task_pattern: str) -> None:
     help="Visibility against white noise, Between 0 and 1.",
 )
 @click.option(
-    "--max-epochs", default=None, help="Maximal number of algorithm epochs to perform."
+    "--max-epochs",
+    default=None,
+    help="Maximal number of algorithm epochs to perform.",
 )
 @click.option(
-    "--iters-per-epoch", default=None, help="Number of iterations per single epoch."
+    "--iters-per-epoch",
+    default=None,
+    help="Number of iterations per single epoch.",
 )
 @click.option(
     "--max-corrections",
@@ -290,8 +503,20 @@ def _inspect_output(ctx: Ctx, task_pattern: str) -> None:
     default=None,
     help="Path to file containing projection matrix.",
 )
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    default=False,
+    help="Make prompt not interactive at all.",
+)
+@click.option(
+    "--override-existing",
+    is_flag=True,
+    default=False,
+    help="Override existing task with the same name.",
+)
 def _add_gilbert_task(  # noqa: PLR0913
-    ctx: Ctx,
+    project_path: Path,
     name: Optional[str],
     mode: Optional[str],
     backend_name: Optional[str],
@@ -306,6 +531,9 @@ def _add_gilbert_task(  # noqa: PLR0913
     symmetries: Optional[str],
     projection: Optional[str],
     derive: Optional[str],
+    *,
+    no_interactive: bool,
+    override_existing: bool,
 ) -> None:
     """Add new gilbert algorithm task.
 
@@ -315,13 +543,9 @@ def _add_gilbert_task(  # noqa: PLR0913
     from cssfinder.cssfproject import CSSFProject
     from cssfinder.interactive import GilbertTaskSpec, add_task_gilbert
 
-    if ctx.project_path is None:
-        reason = "ctx.project_path shall not be None."
-        raise RuntimeError(reason)
+    project = CSSFProject.load_project(project_path)
 
-    project = CSSFProject.load_project(ctx.project_path)
-
-    add_task_gilbert(
+    add_task_gilbert(  # type: ignore[misc]
         project,
         GilbertTaskSpec(
             name or f"task_{len(project.tasks)}",
@@ -339,10 +563,13 @@ def _add_gilbert_task(  # noqa: PLR0913
             projection,
             derive,
         ),
+        no_interactive=no_interactive,
+        override_existing=override_existing,
     )
 
 
 @_project.command("run-tasks")
+@_add_project_path_argument()
 @click.option(
     "--match",
     "-m",
@@ -367,7 +594,12 @@ def _add_gilbert_task(  # noqa: PLR0913
 )
 @click.pass_obj
 def _run_tasks(
-    ctx: Ctx, match_: list[str] | None, *, force_sequential: bool, max_parallel: int
+    ctx: Ctx,
+    project_path: Path,
+    match_: list[str] | None,
+    *,
+    force_sequential: bool,
+    max_parallel: int,
 ) -> None:
     """Run tasks from the project."""
     from cssfinder.algorithm.gilbert import SaveCorrectionsHookError, SaveStateHookError
@@ -381,15 +613,12 @@ def _run_tasks(
     if not match_:
         match_ = None
 
-    if ctx.project_path is None:
-        reason = "ctx.project_path shall not be None."
-        raise RuntimeError(reason)
-
     try:
         run_project_from(
-            ctx.project_path,
+            project_path,
             match_,
             is_debug=ctx.is_debug,
+            is_rich=ctx.is_rich,
             force_sequential=force_sequential,
             max_parallel=max_parallel,
         )
@@ -418,6 +647,7 @@ def _run_tasks(
 
 
 @_project.command("create-task-report")
+@_add_project_path_argument()
 @click.argument(
     "task",
 )
@@ -450,9 +680,14 @@ def _run_tasks(
     default=False,
     help="Automatically open report in web browser.",
 )
-@click.pass_obj
 def _create_task_report(
-    ctx: Ctx, task: str, *, html: bool, pdf: bool, json: bool, open_: bool
+    project_path: Path,
+    task: str,
+    *,
+    html: bool,
+    pdf: bool,
+    json: bool,
+    open_: bool,
 ) -> None:
     """Create short report for task.
 
@@ -461,8 +696,6 @@ def _create_task_report(
     """
     from cssfinder.api import AmbiguousTaskKeyError, create_report_from
     from cssfinder.reports.renderer import ReportType
-
-    assert ctx.project_path is not None
 
     include_report_types = []
 
@@ -477,15 +710,18 @@ def _create_task_report(
 
     if len(include_report_types) == 0:
         logging.critical(
-            "No report type was selected therefore nothing will be calculated, exiting."
+            "No report type was selected therefore nothing will be calculated, "
+            "exiting.",
         )
         raise SystemExit(0)
 
     try:
-        for report in create_report_from(ctx.project_path, task, include_report_types):
+        for report in create_report_from(project_path, task, include_report_types):
             report.save_default()
             if open_:
                 report.get_default_dest()
+                import webbrowser
+
                 webbrowser.open(url=report.get_default_dest().as_uri())
 
     except AmbiguousTaskKeyError as exc:
@@ -499,28 +735,60 @@ def _log_exit(code: int) -> None:
 
 
 @_project.command("create-json-summary")
+@_add_project_path_argument()
 @click.argument("task_pattern")
-@click.pass_obj
-def _create_json_summary(ctx: Ctx, task_pattern: str) -> None:
+def _create_json_summary(project_path: Path, task_pattern: str) -> None:
     """Load and display project."""
     import json
 
-    assert ctx.project_path is not None
+    from cssfinder.api import create_report_from
+    from cssfinder.reports.renderer import ReportType
+
     output = []
 
     for report in create_report_from(
-        ctx.project_path, task=task_pattern, reports=[ReportType.JSON]
+        project_path,
+        task=task_pattern,
+        reports=[ReportType.JSON],
     ):
         content = json.loads(report.content)
         output.append(content)
 
-    dest = Path(ctx.project_path) / "output" / "summary.json"
+    dest = Path(project_path) / "output" / "summary.json"
     dest.write_text(json.dumps(output, indent=4))
+
+
+@_project.command("to-python")
+@_add_project_path_argument("json_project_path", _json_project_path_validator)
+@click.option("--override-existing", is_flag=True, default=False)
+def _to_python(json_project_path: Path, *, override_existing: bool) -> None:
+    """Load project from JSON_PROJECT_PATH and convert it to Python based project."""
+    from cssfinder.cssfproject import CSSFProject
+
+    project = CSSFProject.load_project(json_project_path)
+    project_file_path = project.project_file.with_suffix(".py")
+
+    if (
+        not override_existing
+        and project_file_path.exists()
+        and (
+            input("`cssfinder.py` already exists, override? (y/n) ").casefold()
+            != "Y".casefold()
+        )
+    ):
+        print("Aborted.")
+        raise SystemExit(1)
+
+    project_file_path.write_text(
+        project.to_python_project_template(),
+    )
 
 
 @main.command("list-backends")
 def _list_backends() -> None:
     """List available backends."""
+    import rich
+
     from cssfinder.algorithm.backend.loader import Loader
 
     rich.get_console().print(Loader.new().get_rich_table())
@@ -529,6 +797,8 @@ def _list_backends() -> None:
 @main.command("list-examples")
 def _list_examples() -> None:
     """Show list of all available example projects."""
+    import rich
+
     from cssfinder import examples
 
     console = rich.get_console()
@@ -544,7 +814,9 @@ def validate_mutually_exclusive(
     """Return callback checking for mutually exclusive options."""
 
     def _(
-        ctx: click.Context, param: dict[str, str], value: Optional[str]  # noqa: ARG001
+        ctx: click.Context,
+        param: dict[str, str],  # noqa: ARG001
+        value: Optional[str],
     ) -> Optional[str]:
         if value is not None and ctx.params.get(other) is not None:
             msg = f"{this!r} and {other!r} options are mutually exclusive."
@@ -600,6 +872,8 @@ def _examples_clone(
                     parameter will be considered a example name.
 
     """
+    import rich
+
     from cssfinder.crossplatform import open_file_explorer, open_terminal
     from cssfinder.cssfproject import ProjectFileNotFoundError
     from cssfinder.enums import ExitCode
@@ -612,17 +886,20 @@ def _examples_clone(
     except ProjectFileNotFoundError as exc:
         logging.debug(traceback.format_exc())
         logging.critical(
-            "Sorry but example is broken. (%s)", exc.__class__.__qualname__
+            "Sorry but example is broken. (%s)",
+            exc.__class__.__qualname__,
         )
         raise SystemExit(ExitCode.BROKEN_EXAMPLE) from exc
 
     rich.print(
         f"Found example {example.name!r}, {project.meta.author!r}, "
-        f"{example.get_sha256().hexdigest()[:8]!r}"
+        f"{example.get_sha256().hexdigest()[:8]!r}",
     )
 
     destination_project_folder = _get_validated_destination(
-        destination, example, force_overwrite=force_overwrite
+        destination,
+        example,
+        force_overwrite=force_overwrite,
     )
     try:
         example.clone(destination)
@@ -639,7 +916,10 @@ def _examples_clone(
 
 
 def _get_validated_destination(
-    destination: Path, example: examples.Example, *, force_overwrite: bool
+    destination: Path,
+    example: examples.Example,
+    *,
+    force_overwrite: bool,
 ) -> Path:
     from cssfinder.enums import ExitCode
 

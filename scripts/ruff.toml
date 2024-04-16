@@ -1,0 +1,5 @@
+[lint]
+extend-ignore = [
+    "S607",  # Starting a process with a partial executable path.
+    "S603",  # `subprocess` call: check for execution of untrusted input.
+]

@@ -51,7 +51,7 @@ class Example(Enum):
     benchmark_32x32 = "benchmark_32x32"
     benchmark_64x64 = "benchmark_64x64"
 
-    def get_sha256(self) -> hashlib._Hash:  # noqa: SLF001
+    def get_sha256(self) -> hashlib._Hash:
         """Calculate and return SHA-256 of example project file."""
         source = self.get_project().project_file
         content = source.read_bytes()
@@ -93,7 +93,7 @@ class Example(Enum):
                     f"{len(project.tasks)}",
                     project.meta.description,
                 )
-            except FileNotFoundError:
+            except FileNotFoundError:  # noqa: PERF203
                 table.add_row(
                     entry.value,
                     "---",

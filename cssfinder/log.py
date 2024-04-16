@@ -116,7 +116,7 @@ class MarkupStripFormatter(logging.Formatter):
 
     """
 
-    def format(self, record: LogRecord) -> str:  # noqa: A003
+    def format(self, record: LogRecord) -> str:
         """Return the formatted string of a log record after stripping all formatting
         tags.
 
@@ -303,6 +303,7 @@ def enable_performance_logging() -> None:
         tasks: list[str] | None = None,
         *,
         is_debug: bool = False,
+        is_rich: bool = True,
         force_sequential: bool = False,
         max_parallel: int = -1,
     ) -> list[Task]:
@@ -311,6 +312,7 @@ def enable_performance_logging() -> None:
             project,
             tasks,
             is_debug=is_debug,
+            is_rich=is_rich,
             force_sequential=force_sequential,
             max_parallel=max_parallel,
         )
