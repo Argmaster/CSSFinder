@@ -224,7 +224,7 @@ class CSSFProject(CommonBaseModel):
         project_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(project_module)
 
-        project_object = getattr(project_module, "__project__", None)
+        project_object: CSSFProject = getattr(project_module, "__project__", None)
 
         if project_object is None:
             msg = (
