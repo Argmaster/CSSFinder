@@ -73,12 +73,12 @@ pip install cssfinder[rust]
 ```
 
 For more detailed description of installation process visit CSSFinder
-[online documentation](https://argmaster.github.io/CSSFinder/latest/usage/00_installation_guide.md).
+[online documentation](https://argmaster.github.io/CSSFinder/latest/usage/00_installation_guide.html).
 
 ## Quick start guide
 
 For quick start guide please visit
-[Quick Start Guide](https://argmaster.github.io/CSSFinder/latest/usage/01_quick_start.md)
+[Quick Start Guide](https://argmaster.github.io/CSSFinder/latest/usage/01_quick_start.html)
 in CSSFinder online documentation.
 
 ## Command line interface
@@ -115,5 +115,5 @@ main                           - CSSFinder is a script for finding closest separ
 ## Development
 
 For development guidelines please visit
-[Development](https://argmaster.github.io/CSSFinder/latest/development/00_setup.md)
+[Development](https://argmaster.github.io/CSSFinder/latest/development/00_setup.html)
 in CSSFinder online documentation.
