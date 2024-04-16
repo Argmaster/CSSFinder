@@ -224,7 +224,7 @@ class CSSFProject(CommonBaseModel):
         project_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(project_module)
 
-        project_object: CSSFProject = getattr(project_module, "__project__", None)
+        project_object = getattr(project_module, "__project__", None)
 
         if project_object is None:
             msg = (
@@ -232,6 +232,14 @@ class CSSFProject(CommonBaseModel):
                 f"From {project_path}."
             )
             raise ImportError(msg)
+
+        if not isinstance(project_object, cls):
+            msg = (
+                f"Expected CSSFProject object in '__project__' field in {project_path}."
+            )
+            raise TypeError(
+                msg,
+            )
 
         if not isinstance(project_object, cls):
             msg = (
