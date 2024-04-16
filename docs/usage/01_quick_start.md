@@ -323,3 +323,39 @@ with use of different software or use CSSFinder to generate report for you.
 
     This section will be natural continuation to `Example #1` section and will
     assume that reader have successfully followed instructions from there.
+
+CSSFinder provides a way to generate summary reports showing results of tasks
+which were run. Those reports can be generated in HTML, PDF and JSON formats.
+HTML and PDF are primarily intended for human consumption, while JSON is more
+suitable for machine processing.
+
+=== "Linux - bash"
+
+    To generate report in PDF format and automatically open it, use following command:
+
+    ```bash
+    cssfinder project create-task-report ./5qubits_json/ task_0 --pdf --open
+    ```
+
+    After running this command, you should see report in your default PDF viewer.
+
+=== "Windows - powershell"
+
+    To generate report in HTML format and automatically open it, use following command:
+
+    ```bash
+    cssfinder project create-task-report ./5qubits_json/ task_0 --html --open
+    ```
+
+    !!! warning "PDF reports on Windows"
+
+        Getting PDF reports to work on Windows can be troublesome. Please check out
+        [Installation Guide](https://argmaster.github.io/CSSFinder/latest/usage/00_installation_guide.html)
+        Windows installation for more information.
+
+    After running this command, you should see report in your default HTML viewer.
+
+Example report looks like this:
+
+![image](https://github.com/Argmaster/CSSFinder/assets/56170852/5984b903-241a-447e-b9bf-8772ca3d2f02)
+![image](https://github.com/Argmaster/CSSFinder/assets/56170852/b84dc7f1-271b-4272-a048-93970edff1f1)

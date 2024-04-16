@@ -563,8 +563,8 @@ def _add_gilbert_task(  # noqa: PLR0913
             projection,
             derive,
         ),
-        no_interactive,
-        override_existing,
+        no_interactive=no_interactive,
+        override_existing=override_existing,
     )
 
 
@@ -680,7 +680,6 @@ def _run_tasks(
     default=False,
     help="Automatically open report in web browser.",
 )
-@click.pass_obj
 def _create_task_report(
     project_path: Path,
     task: str,

@@ -214,6 +214,13 @@ def run_gilbert(
 
     logging.warning("Task %r finished.", config.task_name)
 
+    if is_rich:
+        rich.print(Panel.fit(f"[blue]Task {config.task_name} finished."))
+    else:
+        print("-----------------------")
+        print(f"| Task {config.task_name} finished |")
+        print("-----------------------")
+
 
 def create_gilbert(
     config: GilbertCfg,

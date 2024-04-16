@@ -335,54 +335,167 @@ queues to speed up calculations.
 
 ## Adding tasks (JSON only)
 
+!!! warning
+
+    This section is a continuation to the previous one. If you haven't created a
+    project yet, please refer to the previous section.
+
+    Current working directory should contain `new_project` project directory.
+
+!!! warning
+
+    This section is only applicable to `cssfproject.json` projects.
+
+Main purpose of a project is to be a container for "tasks". Each task is just a
+dictionary containing configuration for CSSFinder, describing what to do, with
+what algorithm, what data to use and possibly some additional parameters
+describing how PC resources should be used. They can be added either manually,
+by editing `cssfproject.json` file, or by using `cssfinder` commands.
+
+We will continue with task utilizing Gilbert algorithm, as it is currently only
+one implemented. To run this algorithm we need to provide a state matrix in
+form of a file.
+
+To create `state.mtx` file you can use following command:
+
+=== "Linux"
+
+    ```bash
+    echo '"%%MatrixMarket matrix array real symmetric
+    %Created with the Wolfram Language : www.wolfram.com
+    8 8
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    -2.5000000000000000E-01
+    0.0000000000000000E+00
+    -2.5000000000000000E-01
+    -2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    ' > ./new_project/state.mtx
+    ```
+
+=== "Windows"
+
+    ```powershell
+    echo '%%MatrixMarket matrix array real symmetric
+    %Created with the Wolfram Language : www.wolfram.com
+    8 8
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    -2.5000000000000000E-01
+    0.0000000000000000E+00
+    -2.5000000000000000E-01
+    -2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    2.5000000000000000E-01
+    0.0000000000000000E+00
+    0.0000000000000000E+00
+    ' > ./new_project/state.mtx
+    ```
+
+Although you can also copy-paste the matrix into a file with any text editor.
+
+After creating matrix file, we can add task to the project. Following command
+should do exactly that:
+
+```bash
+cssfinder project add-gilbert-task ./new_project/ --no-interactive --state "{project.project_directory}/state.mtx"
 ```
-%%MatrixMarket matrix array real symmetric
-%Created with the Wolfram Language : www.wolfram.com
-8 8
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-  -2.5000000000000000E-01
-   0.0000000000000000E+00
-  -2.5000000000000000E-01
-  -2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   2.5000000000000000E-01
-   0.0000000000000000E+00
-   0.0000000000000000E+00
+
+Now we can check if task was correctly added by using following command:
+
+```bash
+cssfinder project list-tasks -l ./new_project/
 ```
+
+Here is the output:
+
+```log
+task_0 mode=FSnQd backend=numpy_jit
+```
+
+Now we can run this task to make sure it works:
+
+```bash
+cssfinder project run-tasks ./new_project/ -m task_0
+```
+
+Here is the expected output:
+
+```log
+╭──────────────────────╮
+│ Task task_0 started. │
+╰──────────────────────╯
+╭───────────────────────╮
+│ Task task_0 finished. │
+╰───────────────────────╯
+```
+
+Now you can utilize the output data to, for example, create HTML report. See
+[Quick Start Guide - Report Generation](https://argmaster.github.io/CSSFinder/latest/usage/01_quick_start.html#report-generation)
+for more information.
 
 ## JSON to Python conversion
 
 CSSFinder can convert JSON project file to Python project file. To do this use:
 
 ```bash
-cssfinder project to-python ./5qubits_json/
+cssfinder project to-python ./new_project/
 ```
 
 If project is already a Python project using this command will fail. Because of

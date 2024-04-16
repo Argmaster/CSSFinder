@@ -47,6 +47,11 @@ algorithm were created:
 Development of those two implementations allowed us to better understand limits
 of what can and what can not become faster.
 
+## Documentation
+
+CSSFinder online documentation can be found
+[here](https://argmaster.github.io/CSSFinder/latest/).
+
 ## Installation
 
 To install CSSFinder from PyPI, use `pip` in terminal:
@@ -68,12 +73,12 @@ pip install cssfinder[rust]
 ```
 
 For more detailed description of installation process visit CSSFinder
-[online documentation](https://argmaster.github.io/cssfinder/latest/usage/00_installation_guide.md).
+[online documentation](https://argmaster.github.io/CSSFinder/latest/usage/00_installation_guide.md).
 
 ## Quick start guide
 
 For quick start guide please visit
-[Quick Start Guide](https://argmaster.github.io/cssfinder/latest/usage/01_quick_start.md)
+[Quick Start Guide](https://argmaster.github.io/CSSFinder/latest/usage/01_quick_start.md)
 in CSSFinder online documentation.
 
 ## Command line interface
@@ -87,9 +92,11 @@ cssfinder show-command-tree
 Output should look similar to this:
 
 ```log
+ ...cssfinder show-command-tree
 main                           - CSSFinder is a script for finding closest separable states.
 ├── clone-example              - Clone one of examples to specific location.
-├── create-new-project         - Create new project.
+├── create-new-json-project    - Create new JSON based project directory `<name>` in current working directory.
+├── create-new-python-project  - Create new Python based project directory `<name>` in current working
 ├── list-backends              - List available backends.
 ├── list-examples              - Show list of all available example projects.
 ├── project                    - Group of commands for interaction with projects.
@@ -100,12 +107,13 @@ main                           - CSSFinder is a script for finding closest separ
 │   ├── inspect-output         - Load project from PROJECT_PATH and display output of task specified by
 │   ├── inspect-tasks          - Load project from PROJECT_PATH and inspect configuration of tasks specified by
 │   ├── list-tasks             - Load project from PROJECT_PATH and list names of all tasks defined.
-│   └── run-tasks              - Run tasks from the project.
+│   ├── run-tasks              - Run tasks from the project.
+│   └── to-python              - Load project from JSON_PROJECT_PATH and convert it to Python based project.
 └── show-command-tree          - Show the command tree of your CLI.
 ```
 
 ## Development
 
 For development guidelines please visit
-[Development](https://argmaster.github.io/cssfinder/latest/development/00_setup.md)
+[Development](https://argmaster.github.io/CSSFinder/latest/development/00_setup.md)
 in CSSFinder online documentation.
