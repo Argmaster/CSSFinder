@@ -2723,13 +2723,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "poethepoet"
-version = "0.19.0"
+version = "0.25.1"
 description = "A task runner that works well with poetry."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "poethepoet-0.19.0-py3-none-any.whl", hash = "sha256:87038be589077e4b407050a9da644d9cd9e4076ccfc8abc7f855cf6870d5c6c2"},
-    {file = "poethepoet-0.19.0.tar.gz", hash = "sha256:897eb85ec15876d79befc7d19d4c80ce7c8b214d1bb0dcfec640abd81616bfed"},
+    {file = "poethepoet-0.25.1-py3-none-any.whl", hash = "sha256:fee433f68424593bca6b357f0bf997d64edf42c7305c0d5d335bd570b8d2352b"},
+    {file = "poethepoet-0.25.1.tar.gz", hash = "sha256:98f4446533a4b2bdb08843e211f918b1f2e7f8baf6d1803ef78f64661ed62463"},
 ]
 
 [package.dependencies]
@@ -4237,4 +4237,4 @@ backend-rust = ["cssfinder-backend-rust"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "c42958bca3d9ac6fbb9796a0fd57788c450096c63f132a8974deb3b0b4e3c349"
+content-hash = "7259569905af144f700bfe02cd974568f1c49a7d08c25893ac055182240d9d7d"
